@@ -1,1 +1,9 @@
+# Ignore virtual environment
 btk_djangoCourseVenv/
+
+# Ignore Python cache files
+__pycache__/
+*.pyc
+
+# Ignore IDE files
+.vscode/
