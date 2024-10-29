@@ -38,6 +38,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     "courses", # to add other apps inside the app
+    "pages", # to add the pages app inside the app
 ]
 
 MIDDLEWARE = [

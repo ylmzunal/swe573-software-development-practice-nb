@@ -19,14 +19,11 @@ from django.urls import path
 from django.urls import include # to be able to add app urls
 from django.http import HttpResponse # to be able to use HttpResponse method
 
-def home(request): # to return Home text as a response, takes request object as parameter
-    return HttpResponse("Home")
 
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path("", home), # to go to home screen as default
-    path("home", home), # to go to home screen with /home in the url
+    path("", include("pages.urls")), # to go to pages urls when there is nothing in the site url
     path("courses/", include("courses.urls")) # to go to courses page with /courses in the url
 ]
 
