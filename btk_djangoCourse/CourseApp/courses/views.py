@@ -12,11 +12,21 @@ data = {"programming": "Programming Course",
         "web-programming": "Web Programming Course"}
 
 
-def courses(request): # to return Courses text as a response, takes request object as parameter
-    return HttpResponse("Courses")
+def coursesHome(request):
+    return render(request, "courses/coursesHome.html")
 
-def coursesList(request):
-    return HttpResponse("Courses List")
+def courses(request): # to return Courses text as a response, takes request object as parameter
+    list_items = ""
+    category_list = list(data.keys())
+    for category_name in category_list:
+        redirect_url = reverse("courses_by_category_name", args= [category_name]) # for every list item, a url is created
+        list_items  += f"<li><a href= '{redirect_url}'>{category_name}</a></li>" # a html list items are created with references to the corresponding urls
+
+    html = f"<h1>Courses</h1><br><ul>{list_items}</ul>"
+
+
+    return HttpResponse(html)
+
 
 def courseDetails(request, course_name):
     text = ""

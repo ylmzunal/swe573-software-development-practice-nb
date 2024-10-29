@@ -56,7 +56,7 @@ ROOT_URLCONF = 'CourseApp.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [BASE_DIR / "templates" ], # to add the newly created templates folder containing the layouts
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
