@@ -1,0 +1,26 @@
+{% extends "layout.html" %}
+
+
+{% block page_title %}
+Courses
+{% endblock page_title %}
+
+
+{% block content %}
+<div class="container mt-3"> <!--mt: margin-top[0:6]-->
+    <div class="row"> <!--max 12 columns-->
+        <div class="col-3">
+            <!--menu-->
+            {% include "courses/includes/_categories.html" %}
+        </div>
+        <div class="col-9">
+            <h1>
+                {{category}}
+            </h1>
+            <p>
+                {{category_text}}
+            </p>
+        </div>
+    </div>
+</div>
+{% endblock content %}

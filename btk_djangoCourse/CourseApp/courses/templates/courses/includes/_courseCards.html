@@ -1,0 +1,21 @@
+{% load static %}
+<div class="card mb-3">
+    <div class="row">
+        <div class="col-4">
+            <img src="{% static 'courses/img/'|add:course.imageUrl %}" alt="{{course.title}}" class="img-fluid rounded-start" style="height: 150px; object-fit: contain;">
+        </div>
+        <div class="col-8">
+            <div class="card-body">
+                <h5 class="card-title">{{course.title}}</h5>
+                <p class="card-text">{{course.description}}</p>
+                <p>
+                    {% if course.isUpdated %}
+                        <span class="badge bg-success">Updated</span>
+                    {% else %}
+                        <span class="badge bg-warning">Awaiting update</span>
+                    {% endif %}
+                </p>
+            </div>
+        </div>
+    </div>
+</div>

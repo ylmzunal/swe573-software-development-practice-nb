@@ -1,8 +1,13 @@
 {% extends "layout.html" %}
 
+{% load static %}
+
+{% block css_files%}
+    <link rel="stylesheet" href="{% static "courses/css/style.css" %}">
+{% endblock  %}
 
 {% block page_title %}
-Courses Home Page
+Courses
 {% endblock page_title %}
 
 
@@ -10,13 +15,21 @@ Courses Home Page
 <div class="container mt-3"> <!--mt: margin-top[0:6]-->
     <div class="row"> <!--max 12 columns-->
         <div class="col-3">
-            <!--menu-->
-            {% include "courses/includes/_categories.html" %}
+
+            {% include "courses/includes/_categories.html" %} <!-- _categories.html can access the data that is sent here. the same can be written here as well-->
+            
         </div>
         <div class="col-9">
-            <h1>
-                Courses Home Page
-            </h1>
+
+            {% for course in courses %} <!--the for loop could also be added to the _courseCards.html-->
+
+                {% if course.isActive == True %}
+                    {% include "courses/includes/_courseCards.html" %}
+                {% endif %}
+               
+
+            {% endfor %}
+
         </div>
     </div>
 </div>
