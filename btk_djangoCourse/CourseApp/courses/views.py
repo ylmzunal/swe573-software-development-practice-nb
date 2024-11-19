@@ -1,11 +1,14 @@
 # to add the view methods for each url response
 
 from datetime import date
-from django.shortcuts import redirect, render
+from django.shortcuts import get_object_or_404, redirect, render
 
-from django.http import HttpResponse, HttpResponseNotFound, HttpResponseRedirect # to be able to use HttpResponse method
+from django.http import Http404, HttpResponse, HttpResponseNotFound, HttpResponseRedirect # to be able to use HttpResponse method
 
 from django.urls import reverse # to access paths dynamically
+
+from .models import Course # to be able to use the Course model
+from .models import Category # to be able to use the Category model
 
 # for now, it is written here. later, it will be brought from the db
 data = {"programming": "Programming Course",
@@ -62,8 +65,12 @@ db = {
 
 
 def coursesHome(request): # to return Courses text as a response, takes request object as parameter
-    courses = db["courses"]
-    categories = db["categories"]
+    #courses = db["courses"]
+    #categories = db["categories"]
+    courses = Course.objects.all() # to get all courses from the db
+    categories = Category.objects.all() # to get all categories from the db
+    # courses = Course.objects.filter(isActive=True) # to get all active courses from the db
+
 
     '''
     the active courses can be send either by sending all and checking on the html page or filtering them here as follows:
@@ -79,15 +86,23 @@ def coursesHome(request): # to return Courses text as a response, takes request 
     return render(request, "courses/coursesHome.html", {"categories": categories, "courses": courses, })
 
 
-def courseDetails(request, course_name):
-    text = ""
+def courseDetails(request, course_id): # to return Courses text as a response, takes request object as parameter
+    '''text = ""
     if course_name == "django":
         text = "Django" 
     elif course_name == "python":
         text = "Python"
     else:
-        return HttpResponse("Course name is not valid.")
-    return HttpResponse(f"{text} Course Details")
+        return HttpResponse("Course name is not valid.")'''
+    #try:
+    #    course = Course.objects.get(pk=course_id) # to get the course details from the db
+    #except:
+    #    raise Http404("Course not found") # to return a 404 error if the course is not found
+    #above or
+    course = get_object_or_404(Course, pk=course_id) # to return a 404 error if the course is not found 
+    context = {"course": course} # to get the course details from the db
+    return render(request, "courses/courseDetails.html", context) # to return the course details page
+    #return HttpResponse(f"{text} Course Details")
 
 
 

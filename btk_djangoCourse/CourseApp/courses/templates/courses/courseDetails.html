@@ -1,0 +1,30 @@
+{% extends "layout.html" %}
+
+{% load static %}
+
+{% block css_files%}
+    <link rel="stylesheet" href="{% static "courses/css/style.css" %}">
+{% endblock  %}
+
+{% block page_title %}
+{{ course.title }}
+{% endblock page_title %}
+
+
+{% block content %}
+<div class="container mt-3"> <!--mt: margin-top[0:6]-->
+    <div class="row"> <!--max 12 columns-->
+        <div class="col-3">
+
+            {% comment %} <img src="{% static 'courses/img/'|add:course.imageUrl %}" alt="{{course.title}}" class="img-fluid rounded-start" style="height: 150px; object-fit: contain;"> {% endcomment %}
+            
+        </div>
+        <div class="col-9">
+
+            <h1 class="h3">{{ course.title }}</h1>
+            <p>{{ course.description }}</p>
+
+        </div>
+    </div>
+</div>
+{% endblock content %}

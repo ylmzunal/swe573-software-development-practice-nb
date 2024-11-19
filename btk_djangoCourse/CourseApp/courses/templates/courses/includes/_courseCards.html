@@ -6,15 +6,13 @@
         </div>
         <div class="col-8">
             <div class="card-body">
-                <h5 class="card-title">{{course.title}}</h5>
+                <h5 class="card-title">
+                    <a href="{% url "course_details" course.id %}">
+                        {{course.title}}
+                    </a>
+                </h5>
                 <p class="card-text">{{course.description}}</p>
-                <p>
-                    {% if course.isUpdated %}
-                        <span class="badge bg-success">Updated</span>
-                    {% else %}
-                        <span class="badge bg-warning">Awaiting update</span>
-                    {% endif %}
-                </p>
+                <p>{{course.date|date:"SHORT_DATE_FORMAT"}}</p>
             </div>
         </div>
     </div>
