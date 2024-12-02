@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Edit Profile</title>
+</head>
+<body>
+    <h2>Edit Profile</h2>
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        {{ form.non_field_errors }}
+        <p>
+            {{ form.first_name.label_tag }} {{ form.first_name }}
+        </p>
+        <p>
+            {{ form.last_name.label_tag }} {{ form.last_name }}
+        </p>
+        <p>
+            {{ form.email.label_tag }} {{ form.email }}
+        </p>
+        <p>
+            {{ form.profile_picture.label_tag }} {{ form.profile_picture }}
+        </p>
+        <p>
+            {{ form.birthday.label_tag }} {{ form.birthday }}
+        </p>
+        <p>
+            {{ form.bio.label_tag }} {{ form.bio }}
+        </p>
+        <hr>
+        <p>
+            {{ form.new_password.label_tag }} {{ form.new_password }}
+            {% if form.new_password.help_text %}
+                <small>{{ form.new_password.help_text }}</small>
+            {% endif %}
+        </p>
+        <p>
+            {{ form.confirm_password.label_tag }} {{ form.confirm_password }}
+        </p>
+        <button type="submit">Save Changes</button>
+    </form>
+</body>
+</html>
