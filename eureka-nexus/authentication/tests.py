@@ -23,7 +23,7 @@ class AuthenticationTestCase(TestCase):
         if response.status_code != 201:
             print(response.content)  # Print the response content for debugging
         self.assertIn('message', response.data)
-        self.assertEqual(response.data['message'], 'Account created successfully. Please check your email to activate your account.')
+        self.assertEqual(response.data['message'], 'Account created successfully. You are now logged in.')
 
     def test_login(self): # to test the login endpoint with an existing user
         response = self.client.post('/authentication/login/', {'username': 'testuser', 'password': 'testpassword'})
@@ -53,6 +53,8 @@ class AuthenticationTestCase(TestCase):
         self.assertIn('message', response.data)
         self.assertEqual(response.data['message'], 'Profile updated successfully.')
 
+'''
+# can be used to activate account
 class EmailValidationTests(TestCase):
     def setUp(self):
         self.client = APIClient()
@@ -102,3 +104,4 @@ class EditProfileEmailChangeTestCase(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertFalse(self.user.is_active)  # Account should be deactivated
         self.assertEqual(self.user.email, 'new.email@example.com')
+'''

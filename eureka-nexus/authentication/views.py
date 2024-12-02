@@ -1,32 +1,25 @@
 from django.shortcuts import render
 
 from django.contrib.auth.models import User
-from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth import authenticate, login, logout, update_session_auth_hash
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework import serializers
 from .models import Profile
+from .serializers import UserSerializer
 from django.core.validators import validate_email
 import re
-
-# for sending activation email
-from django.urls import reverse
-from django.contrib.auth import update_session_auth_hash
+from django.templatetags.static import static
+from django.core.exceptions import ValidationError
 
 # editing profile
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.parsers import MultiPartParser
 
-# email validation
-from django.core.mail import send_mail
-from django.contrib.sites.models import Site
 from rest_framework_simplejwt.tokens import RefreshToken
-
-# email activation endpoint
 from rest_framework.permissions import AllowAny
 from rest_framework_simplejwt.tokens import TokenError
-from rest_framework_simplejwt.tokens import RefreshToken
 import logging
 logger = logging.getLogger(__name__)
 
@@ -44,178 +37,221 @@ def validate_password(password): # to validate the password by checking its leng
     return True, None
 
 
-def send_activation_email(user): # to send an activation email to the user after signing up
-    # Generate refresh token
-    refresh = RefreshToken.for_user(user)
-    activation_path = reverse('activate-account', kwargs={'token': str(refresh)})
-
-    # Construct activation link
-    current_site = Site.objects.get_current()
-    activation_link = f"http://{current_site.domain}{activation_path}"
-    print(f"Generated activation link: {activation_link}")
-
-    # Send email
-    send_mail(
-        subject="Activate your Eureka Nexus account",
-        message=f"Hi {user.first_name},\n\nClick the link below to activate your account:\n{activation_link}\n\nThank you!",
-        from_email="noreply@eurekanexus.com",
-        recipient_list=[user.email],
-    )
-
-
-class ActivateAccountView(APIView):  # to activate the user's account after clicking the activation link in the email
+class SignupView(APIView):
     permission_classes = [AllowAny]
-
-    def get(self, request, token):
-        print(f"Token received: {token}")
+    def post(self, request):
         try:
-            # Decode refresh token to get user ID
-            refresh = RefreshToken(token)
-            user_id = refresh.get("user_id")
-            user = User.objects.get(id=user_id)
+            # Check if username already exists
+            if User.objects.filter(username=request.data.get('username')).exists():
+                return Response({'error': 'Username is already taken.'}, 
+                              status=status.HTTP_400_BAD_REQUEST)
 
-            if user.is_active:
-                return Response({'error': 'Account is already activated.'}, status=status.HTTP_400_BAD_REQUEST)
+            # Check if email already exists
+            if User.objects.filter(email=request.data.get('email').lower()).exists():
+                return Response({'error': 'Email is already registered.'}, 
+                              status=status.HTTP_400_BAD_REQUEST)
 
-            # Activate the user's account
-            user.is_active = True
-            user.save()
+            # Validate password match
+            if request.data.get('password') != request.data.get('retyped_password'):
+                return Response({'error': 'Passwords do not match.'}, 
+                              status=status.HTTP_400_BAD_REQUEST)
 
-            # Generate access and refresh tokens for login
-            new_refresh = RefreshToken.for_user(user)
-            return Response({
-                'message': 'Account activated successfully.',
-                'access': str(new_refresh.access_token),
-                'refresh': str(new_refresh),
-            }, status=status.HTTP_200_OK)
-        except (User.DoesNotExist, TokenError) as e:
-            logger.error(f"Activation error: {e}")
-            return Response({'error': 'Invalid or expired token.'}, status=status.HTTP_400_BAD_REQUEST)
+            # Validate password strength
+            is_valid, error_msg = validate_password(request.data.get('password'))
+            if not is_valid:
+                return Response({'error': error_msg}, 
+                              status=status.HTTP_400_BAD_REQUEST)
+
+            # Create user with serializer
+            serializer = UserSerializer(data={
+                'username': request.data.get('username'),
+                'email': request.data.get('email').lower(),
+                'password': request.data.get('password'),
+                'first_name': request.data.get('first_name'),
+                'last_name': request.data.get('last_name')
+            })
+            
+            if serializer.is_valid():
+                user = serializer.save()
+                
+                # Create Profile
+                Profile.objects.create(user=user)
+
+                # Generate tokens
+                refresh = RefreshToken.for_user(user)
+
+                return Response({
+                    'message': 'Account created successfully.',
+                    'access': str(refresh.access_token),
+                    'refresh': str(refresh)
+                }, status=status.HTTP_201_CREATED)
+            
+            return Response({'error': serializer.errors}, 
+                          status=status.HTTP_400_BAD_REQUEST)
+
+        except Exception as e:
+            logger.error(f"Unexpected error during signup: {e}")
+            return Response({'error': str(e)}, 
+                          status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
 
 
 
-class SignupView(APIView): # to create a new user using the signup form on the frontend
+
+class LoginView(APIView):
+    permission_classes = [AllowAny]
     def post(self, request):
         try:
             username = request.data.get('username')
-            first_name = request.data.get('first_name')
-            last_name = request.data.get('last_name')
-            email = request.data.get('email')
             password = request.data.get('password')
-            retyped_password = request.data.get('retyped_password')
 
-            # Validating required fields
-            if not all([username, first_name, last_name, email, password, retyped_password]):
-                return Response({'error': 'All fields are required.'}, status=status.HTTP_400_BAD_REQUEST)
+            # Validate input fields
+            if not username or not password:
+                return Response({'error': 'Username and password are required.'}, status=status.HTTP_400_BAD_REQUEST)
 
-            # Check if username already exists
-            if User.objects.filter(username=username).exists():
-                return Response({'error': 'Username already in use.'}, status=status.HTTP_400_BAD_REQUEST)
-
-            # Check if email already exists
-            if User.objects.filter(email=email.lower()).exists():
-                return Response({'error': 'Email already in use.'}, status=status.HTTP_400_BAD_REQUEST)
-
-            # Validating passwords
-            if password != retyped_password:
-                return Response({'error': 'Passwords do not match.'}, status=status.HTTP_400_BAD_REQUEST)
-
-            # Validating password criteria
-            is_valid, error_msg = validate_password(password)
-            if not is_valid:
-                return Response({'error': error_msg}, status=status.HTTP_400_BAD_REQUEST)
-
-            # Create user and profile
-            user = User.objects.create_user(username=username, password=password,  email=email.lower(), first_name=first_name, last_name=last_name)
-            
-            # send activation email to the user
-            send_activation_email(user)
-            logger.info(f"Signup successful for user {email}")
-            return Response({'message': 'Account created successfully. Please check your email to activate your account.'}, status=status.HTTP_201_CREATED)
+            # Authenticate user
+            user = authenticate(request, username=username, password=password)
+            if user is not None:
+                if not user.is_active:
+                    return Response({'error': 'This account is inactive.'}, status=status.HTTP_401_UNAUTHORIZED)
+                
+                # Generate tokens
+                refresh = RefreshToken.for_user(user)
+                
+                return Response({
+                    'message': 'Logged in successfully.',
+                    'user': {
+                        'id': user.id,
+                        'username': user.username,
+                        'first_name': user.first_name,
+                        'last_name': user.last_name
+                    },
+                    'access': str(refresh.access_token),
+                    'refresh': str(refresh)
+                }, status=status.HTTP_200_OK)
+            else:
+                return Response({'error': 'Invalid credentials.'}, status=status.HTTP_401_UNAUTHORIZED)
+                
         except Exception as e:
-            logger.error(f"Unexpected error in signup: {e}")
-            return Response({'error': 'An unexpected error occurred.'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            logger.error(f"Login failed: {e}")
+            return Response({'error': 'An unexpected error occurred during login.'}, 
+                          status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
-class LoginView(APIView): # to authenticate the user using the login form on the frontend
+class LogoutView(APIView):
+    permission_classes = [IsAuthenticated]
+    
     def post(self, request):
-        username = request.data.get('username')
-        password = request.data.get('password')
-        user = authenticate(request, username=username, password=password)
+        try:
+            token = request.data.get('refresh')
+            if not token:
+                return Response({'error': 'Refresh token is required.'}, 
+                              status=status.HTTP_400_BAD_REQUEST)
 
-        if user is not None:
-            login(request, user)
-            return Response({'message': 'Logged in successfully'}, status=status.HTTP_200_OK)
-        else:
-            return Response({'error': 'Invalid credentials'}, status=status.HTTP_400_BAD_REQUEST)
+            # Blacklist the refresh token
+            try:
+                refresh_token = RefreshToken(token)
+                refresh_token.blacklist()
+                
+                # Log the successful logout
+                logger.info(f"User {request.user.username} logged out successfully")
+                
+                return Response({'message': 'Logged out successfully.'}, 
+                              status=status.HTTP_200_OK)
+                              
+            except TokenError as e:
+                logger.warning(f"Invalid token during logout for user {request.user.username}: {e}")
+                return Response({'error': 'Invalid refresh token.'}, 
+                              status=status.HTTP_400_BAD_REQUEST)
+                              
+        except Exception as e:
+            logger.error(f"Logout failed for user {request.user.username}: {e}")
+            return Response({'error': 'An unexpected error occurred during logout.'}, 
+                          status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 
-class LogoutView(APIView): # to sign out the user using the logout button on the frontend
-    def post(self, request):
-        logout(request)
-        return Response({'message': 'Logged out successfully'}, status=status.HTTP_200_OK)
-
-
-
-class EditProfileView(APIView): # to edit the user's profile using the edit profile form on the frontend
-    permission_classes = [IsAuthenticated] # to ensure that only authenticated users can access this view
-    parser_classes = [MultiPartParser] # to enable file uploads
+class EditProfileView(APIView):
+    permission_classes = [IsAuthenticated]
+    parser_classes = [MultiPartParser]
 
     def put(self, request):
-        profile = request.user.profile
         user = request.user
+        try:
+            profile = user.profile
+        except Profile.DoesNotExist:
+            return Response({'error': 'Profile not found.'}, status=status.HTTP_404_NOT_FOUND)
 
-        # Validate current password if provided
+        # Password update
         current_password = request.data.get('current_password')
         new_password = request.data.get('new_password')
         retyped_new_password = request.data.get('retyped_new_password')
-        if current_password and new_password and retyped_new_password:
+        
+        if any([current_password, new_password, retyped_new_password]):
+            if not all([current_password, new_password, retyped_new_password]):
+                return Response({'error': 'All password fields are required.'}, status=status.HTTP_400_BAD_REQUEST)
+            
             if not user.check_password(current_password):
                 return Response({'error': 'Current password is incorrect.'}, status=status.HTTP_400_BAD_REQUEST)
+                
             if new_password != retyped_new_password:
                 return Response({'error': 'New passwords do not match.'}, status=status.HTTP_400_BAD_REQUEST)
-            else:
-                is_valid, error_msg = validate_password(new_password)
-                if not is_valid:
-                    return Response({'error': error_msg}, status=status.HTTP_400_BAD_REQUEST)
-            user.set_password(new_password)
-            update_session_auth_hash(request, user)  # to keep the user logged in after changing the password
-        elif any([current_password, new_password, retyped_new_password]):
-            return Response({'error': 'All password fields are required.'}, status=status.HTTP_400_BAD_REQUEST)
+                
+            try:
+                validate_password(new_password)
+                user.set_password(new_password)
+                update_session_auth_hash(request, user)
+            except ValidationError as e:
+                return Response({'error': e.messages}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Validate and update username
-        new_username = request.data.get('username', user.username)
-        if new_username != user.username and User.objects.filter(username=new_username).exists():
-            return Response({'error': 'Username already in use.'}, status=status.HTTP_400_BAD_REQUEST)
-        user.username = new_username
+        # Username update
+        new_username = request.data.get('username')
+        if new_username and new_username != user.username:
+            if User.objects.filter(username=new_username).exists():
+                return Response({'error': 'Username already in use.'}, status=status.HTTP_400_BAD_REQUEST)
+            user.username = new_username
 
-        # Validate and update email
-        new_email = request.data.get('email', user.email)
-        if new_email.lower() != user.email.lower() and User.objects.filter(email=new_email).exists():
-            return Response({'error': 'Email already in use.'}, status=status.HTTP_400_BAD_REQUEST)
-        elif new_email.lower() != user.email.lower() and new_email:
+        # Email update
+        new_email = request.data.get('email')
+        if new_email and new_email.lower() != user.email.lower():
+            if User.objects.filter(email=new_email.lower()).exists():
+                return Response({'error': 'Email already in use.'}, status=status.HTTP_400_BAD_REQUEST)
             user.email = new_email.lower()
-            user.is_active = False
-            user.save()
-            send_activation_email(user)
-            return Response({'message': 'Profile updated successfully. Please check your new email to reactivate your account.'}, status=status.HTTP_200_OK)
-        
 
-        # Update other profile fields
-        profile.bio = request.data.get('bio', profile.bio)
-        profile.birthday = request.data.get('birthday', profile.birthday)
-        user.first_name = request.data.get('first_name', user.first_name)
-        user.last_name = request.data.get('last_name', user.last_name)
+        # Basic profile updates
+        if 'bio' in request.data:
+            profile.bio = request.data['bio']
+        if 'birthday' in request.data:
+            try:
+                profile.birthday = request.data['birthday']
+            except ValueError:
+                return Response({'error': 'Invalid date format.'}, status=status.HTTP_400_BAD_REQUEST)
+        if 'first_name' in request.data:
+            user.first_name = request.data['first_name']
+        if 'last_name' in request.data:
+            user.last_name = request.data['last_name']
+
+        # Profile picture update
         if 'profile_picture' in request.FILES:
             profile.profile_picture = request.FILES['profile_picture']
 
-        # Save changes
-        user.save()
-        profile.save()
-
-        return Response({'message': 'Profile updated successfully.'}, status=status.HTTP_200_OK)
-
+        try:
+            user.save()
+            profile.save()
+            return Response({
+                'message': 'Profile updated successfully.',
+                'user': {
+                    'username': user.username,
+                    'email': user.email,
+                    'first_name': user.first_name,
+                    'last_name': user.last_name,
+                    'bio': profile.bio,
+                    'birthday': profile.birthday,
+                    'profile_picture': profile.profile_picture.url if profile.profile_picture else None
+                }
+            }, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
 class UserProfileView(APIView):
@@ -223,13 +259,20 @@ class UserProfileView(APIView):
 
     def get(self, request):
         user = request.user
-        profile = user.profile
-
-        return Response({
-            'name': user.first_name,
-            'surname': user.last_name,
-            'email': user.email,
-            'bio': profile.bio,
-            'birthday': profile.birthday,
-            'profile_picture': profile.profile_picture.url
-        }, status=status.HTTP_200_OK)
+        try:
+            profile = user.profile
+            return Response({
+                'username': user.username,
+                'email': user.email,
+                'first_name': user.first_name,
+                'last_name': user.last_name,
+                'bio': profile.bio,
+                'birthday': profile.birthday,
+                'profile_picture': profile.profile_picture.url if profile.profile_picture else static('img/profile_picture.png'),
+                'date_joined': user.date_joined,
+                'last_login': user.last_login
+            }, status=status.HTTP_200_OK)
+        except Profile.DoesNotExist:
+            return Response({'error': 'User profile not found.'}, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
