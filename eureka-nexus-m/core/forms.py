@@ -36,10 +36,6 @@ class ProfileCreationForm(UserCreationForm):
             )
         return password2
 
-class ProfileChangeForm(UserChangeForm):
-    class Meta:
-        model = Profile
-        fields = ('username', 'email', 'password', 'first_name', 'last_name', 'profile_picture', 'birthday', 'bio')
 
 
 from django.contrib.auth.hashers import make_password
@@ -61,6 +57,9 @@ class ProfileChangeForm(forms.ModelForm):
     class Meta:
         model = Profile
         fields = ('first_name', 'last_name', 'email', 'profile_picture', 'birthday', 'bio')
+        widgets = {
+            'birthday': forms.DateInput(attrs={'type': 'date'}),
+        }
 
     def clean(self):
         cleaned_data = super().clean()

@@ -1,51 +1,27 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Sign Up</title>
-</head>
-<body>
-    <h2>Sign Up</h2>
-    <form method="post">
+{% extends 'core/base.html' %}
+{% load static %}
+{% block title %}Sign Up{% endblock %}
+
+{% block content %}
+<div class="max-w-md mx-auto bg-white p-8 rounded-lg shadow-md">
+    <h2 class="text-2xl font-bold mb-6 text-center">Create Your Account</h2>
+    <form method="post" class="space-y-4">
         {% csrf_token %}
-        {{ form.non_field_errors }}
-        <p>
-            {{ form.username.label_tag }}
-            {{ form.username }}
-            {% for error in form.username.errors %}
-                <span style="color: red;">{{ error }}</span>
-            {% endfor %}
-        </p>
-        <p>
-            {{ form.email.label_tag }}
-            {{ form.email }}
-            {% for error in form.email.errors %}
-                <span style="color: red;">{{ error }}</span>
-            {% endfor %}
-        </p>
-        <p>
-            {{ form.first_name.label_tag }}
-            {{ form.first_name }}
-        </p>
-        <p>
-            {{ form.last_name.label_tag }}
-            {{ form.last_name }}
-        </p>
-        <p>
-            {{ form.password1.label_tag }}
-            {{ form.password1 }}
-            {% for error in form.password1.errors %}
-                <span style="color: red;">{{ error }}</span>
-            {% endfor %}
-        </p>
-        <p>
-            {{ form.password2.label_tag }}
-            {{ form.password2 }}
-            {% for error in form.password2.errors %}
-                <span style="color: red;">{{ error }}</span>
-            {% endfor %}
-        </p>
-        <button type="submit">Sign Up</button>
+        {% for field in form %}
+            <div>
+                <label for="{{ field.id_for_label }}" class="block text-sm font-medium text-gray-700">{{ field.label }}</label>
+                {{ field }}
+                {% if field.help_text %}
+                    <p class="mt-1 text-sm text-gray-500">{{ field.help_text|safe }}</p>
+                {% endif %}
+                {% for error in field.errors %}
+                    <p class="mt-1 text-sm text-red-600">{{ error }}</p>
+                {% endfor %}
+            </div>
+        {% endfor %}
+        <button type="submit" class="w-full bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-50">Sign Up</button>
     </form>
-    <p>Already have an account? <a href="{% url 'login' %}">Login here</a></p>
-</body>
-</html>
+    <p class="mt-4 text-center">Already have an account? <a href="{% url 'login' %}" class="text-blue-500 hover:underline">Login</a></p>
+</div>
+{% endblock %}
+

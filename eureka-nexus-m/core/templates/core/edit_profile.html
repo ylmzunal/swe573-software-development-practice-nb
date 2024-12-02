@@ -1,42 +1,32 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Edit Profile</title>
-</head>
-<body>
-    <h2>Edit Profile</h2>
-    <form method="post" enctype="multipart/form-data">
+
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}Edit Profile{% endblock %}
+
+{% block content %}
+<div class="max-w-md mx-auto bg-white p-8 rounded-lg shadow-md">
+    <h2 class="text-2xl font-bold mb-6 text-center">Edit Your Profile</h2>
+    <form method="post" enctype="multipart/form-data" class="space-y-4">
         {% csrf_token %}
-        {{ form.non_field_errors }}
-        <p>
-            {{ form.first_name.label_tag }} {{ form.first_name }}
-        </p>
-        <p>
-            {{ form.last_name.label_tag }} {{ form.last_name }}
-        </p>
-        <p>
-            {{ form.email.label_tag }} {{ form.email }}
-        </p>
-        <p>
-            {{ form.profile_picture.label_tag }} {{ form.profile_picture }}
-        </p>
-        <p>
-            {{ form.birthday.label_tag }} {{ form.birthday }}
-        </p>
-        <p>
-            {{ form.bio.label_tag }} {{ form.bio }}
-        </p>
-        <hr>
-        <p>
-            {{ form.new_password.label_tag }} {{ form.new_password }}
-            {% if form.new_password.help_text %}
-                <small>{{ form.new_password.help_text }}</small>
-            {% endif %}
-        </p>
-        <p>
-            {{ form.confirm_password.label_tag }} {{ form.confirm_password }}
-        </p>
-        <button type="submit">Save Changes</button>
+        <div class="flex items-center justify-center mb-4">
+            <img src="{% if user.profile.profile_picture %}{{ user.profile.profile_picture.url }}{% else %}{% static 'img/profile_picture.png' %}{% endif %}" alt="Current Profile Picture" class="w-24 h-24 rounded-full object-cover">
+        </div>
+        {% for field in form %}
+            <div>
+                <label for="{{ field.id_for_label }}" class="block text-sm font-medium text-gray-700">{{ field.label }}</label>
+                {{ field }}
+                {% if field.help_text %}
+                    <p class="mt-1 text-sm text-gray-500">{{ field.help_text|safe }}</p>
+                {% endif %}
+                {% for error in field.errors %}
+                    <p class="mt-1 text-sm text-red-600">{{ error }}</p>
+                {% endfor %}
+            </div>
+        {% endfor %}
+        <button type="submit" class="w-full bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50">Save Changes</button>
     </form>
-</body>
-</html>
+</div>
+{% endblock %}
+
+

@@ -32,6 +32,7 @@ def login_view(request):
             user = authenticate(request, username=username, password=password)
             if user is not None:
                 login(request, user)
+                messages.success(request, 'Logged in successfully!')
                 return redirect('home')
         else:
             messages.error(request, 'Invalid credentials')
@@ -46,7 +47,6 @@ def logout_view(request):
 def profile_view(request):
     return render(request, 'core/profile.html', {"user": request.user})
 
-from django.contrib import messages  # To provide feedback to the user
 from django.contrib.auth import update_session_auth_hash
 
 def edit_profile(request):
@@ -54,6 +54,7 @@ def edit_profile(request):
         form = ProfileChangeForm(request.POST, request.FILES, instance=request.user)
         if form.is_valid():
             user = form.save()  # Save the updated profile and password
+            messages.success(request, 'Profile updated successfully!')
             # Keep the user logged in after updating the password
             if form.cleaned_data.get('new_password'):
                 update_session_auth_hash(request, user)
