@@ -1,6 +1,6 @@
 from django import forms
 from django.contrib.auth.forms import UserCreationForm, UserChangeForm
-from .models import Profile
+from .models import Profile, Post, WikidataTag
 from django.core.exceptions import ValidationError
 import re
 
@@ -87,4 +87,60 @@ class ProfileChangeForm(forms.ModelForm):
     def _validate_password_strength(self, password):
         import re
         return re.match(r'^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*?&.,])[A-Za-z\d@$!%*?&.,]{8,}$', password)
+
+
+
+class PostForm(forms.ModelForm):
+    class Meta:
+        model = Post
+        fields = ['title', 'description', 'image', 'size', 'size_exactness', 'colour', 'custom_colour',
+                  'shape', 'custom_shape', 'weight', 'weight_exactness', 'texture', 'origin', 'value',
+                  'condition', 'custom_condition', 'smell', 'taste', 'origin_of_acquisition', 'pattern',
+                  'functionality', 'other_multimedia']
+        widgets = {
+            'title': forms.TextInput(attrs={'maxlength': 300}),
+            'description': forms.Textarea(attrs={'rows': 5, 'maxlength': 1000}),
+            'size': forms.TextInput(attrs={'maxlength': 50}),
+            'custom_colour': forms.TextInput(attrs={'maxlength': 50}),
+            'custom_shape': forms.TextInput(attrs={'maxlength': 300}),
+            'weight': forms.TextInput(attrs={'maxlength': 50}),
+            'texture': forms.TextInput(attrs={'maxlength': 300}),
+            'origin': forms.TextInput(attrs={'maxlength': 300}),
+            'value': forms.TextInput(attrs={'maxlength': 50}),
+            'custom_condition': forms.TextInput(attrs={'maxlength': 100}),
+            'smell': forms.TextInput(attrs={'maxlength': 300}),
+            'taste': forms.TextInput(attrs={'maxlength': 300}),
+            'origin_of_acquisition': forms.TextInput(attrs={'maxlength': 300}),
+            'pattern': forms.TextInput(attrs={'maxlength': 300}),
+            'functionality': forms.TextInput(attrs={'maxlength': 300}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['image'].widget.attrs.update({
+            'accept': 'image/gif,image/jpeg,image/png,image/svg+xml,image/webp,image/heic'
+        })
+        # Make required fields
+        self.fields['title'].required = True
+        self.fields['description'].required = True
+        self.fields['image'].required = True
+        
+        # Make all other fields optional
+        for field in self.fields:
+            if field not in ['title', 'description', 'image']:
+                self.fields[field].required = False
+
+class WikidataTagForm(forms.ModelForm):
+    class Meta:
+        model = WikidataTag
+        fields = ['tag_type', 'wikidata_id', 'label']
+
+WikidataTagFormSet = forms.inlineformset_factory(
+    Post, WikidataTag,
+    form=WikidataTagForm,
+    extra=1,
+    can_delete=True
+)
+
+
 

@@ -10,7 +10,7 @@
         {% for field in form %}
             <div>
                 <label for="{{ field.id_for_label }}" class="block text-sm font-medium text-gray-700">{{ field.label }}</label>
-                {{ field }}
+                <input type="{{ field.field.widget.type }}" name="{{ field.name }}" id="{{ field.id_for_label }}" class="border border-gray-300 rounded-md p-2 w-full" value="{{ field.value|default_if_none:'' }}" />
                 {% if field.help_text %}
                     <p class="mt-1 text-sm text-gray-500">{{ field.help_text|safe }}</p>
                 {% endif %}

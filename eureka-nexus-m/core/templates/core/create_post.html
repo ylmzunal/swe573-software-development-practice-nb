@@ -1,0 +1,199 @@
+{% extends 'core/base.html' %}
+{% load static %}
+{% load post_extras %}
+
+{% block title %}Create Post{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Create New Post</h2>
+    
+    <form method="post" enctype="multipart/form-data" id="postForm">
+        {% csrf_token %}
+        
+        <!-- Required Fields -->
+        <div class="required-fields mb-4">
+            <h4>Required Information</h4>
+            <div class="form-group mb-3">
+                <label for="{{ form.title.id_for_label }}">Title*</label>
+                {{ form.title }}
+            </div>
+            
+            <div class="form-group mb-3">
+                <label for="{{ form.description.id_for_label }}">Description*</label>
+                {{ form.description }}
+            </div>
+            
+            <div class="form-group mb-3">
+                <label for="{{ form.image.id_for_label }}">Main Image*</label>
+                {{ form.image }}
+            </div>
+            
+            <div class="form-check mb-3">
+                <input type="checkbox" class="form-check-input" id="anonymousPost" name="anonymous">
+                <label class="form-check-label" for="anonymousPost">Post Anonymously</label>
+            </div>
+        </div>
+
+        <!-- Optional Attributes -->
+        <div class="optional-attributes mb-4">
+            <h4>Optional Attributes</h4>
+            <div class="mb-3">
+                <select class="form-select" id="attributeSelector">
+                    <option value="">Select an attribute to add...</option>
+                    <option value="size">Size</option>
+                    <option value="colour">Colour</option>
+                    <option value="shape">Shape</option>
+                    <option value="weight">Weight</option>
+                    <option value="texture">Texture</option>
+                    <option value="origin">Origin</option>
+                    <option value="value">Value</option>
+                    <option value="condition">Condition</option>
+                    <option value="smell">Smell</option>
+                    <option value="taste">Taste</option>
+                    <option value="origin_of_acquisition">Origin of Acquisition</option>
+                    <option value="pattern">Pattern</option>
+                    <option value="functionality">Functionality</option>
+                </select>
+                                        </div>
+            
+            <div id="selectedAttributes" class="mb-3">
+                <!-- Dynamic attributes will be added here -->
+            </div>
+        </div>
+
+        <!-- Wikidata Tags -->
+        <div class="wikidata-tags mb-4">
+            <h4>Semantic Tags</h4>
+            {{ formset.management_form }}
+            <div id="wikidata-formset">
+                {% for form in formset %}
+                    <div class="wikidata-form mb-3">
+                        {{ form.tag_type }}
+                        <div class="wikidata-search">
+                            <input type="text" class="wikidata-search-input" placeholder="Search Wikidata...">
+                            <div class="wikidata-results"></div>
+                        </div>
+                        {{ form.wikidata_id }}
+                        {{ form.label }}
+                        {% if not forloop.first %}
+                            <button type="button" class="remove-tag btn btn-danger btn-sm">Remove</button>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+            </div>
+            <button type="button" id="add-tag" class="btn btn-secondary">Add Tag</button>
+        </div>
+
+        <button type="submit" class="btn btn-primary">Create Post</button>
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .attribute-container {
+        border: 1px solid #ddd;
+        padding: 15px;
+        margin-bottom: 10px;
+        border-radius: 5px;
+        position: relative;
+    }
+    
+    .remove-attribute {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+    }
+    
+    .wikidata-results {
+        position: absolute;
+        background: white;
+        border: 1px solid #ddd;
+        max-height: 200px;
+        overflow-y: auto;
+        width: 100%;
+        z-index: 1000;
+        display: none;
+    }
+    
+    .wikidata-result-item {
+        padding: 5px 10px;
+        cursor: pointer;
+    }
+    
+    .wikidata-result-item:hover {
+        background-color: #f5f5f5;
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+{{ block.super }}
+<script type="text/javascript">
+const attributeConfig = {
+    size: {
+        label: 'Size',
+        hasExactness: true,
+        maxLength: 50
+    },
+    colour: {
+        label: 'Colour',
+        choices: {{ colour_choices|safe }},
+        customField: true,
+        maxLength: 50
+    },
+    shape: {
+        label: 'Shape',
+        choices: {{ shape_choices|safe }},
+        customField: true,
+        maxLength: 300
+    },
+    weight: {
+        label: 'Weight',
+        hasExactness: true,
+        maxLength: 50
+    },
+    texture: {
+        label: 'Texture',
+        maxLength: 300
+    },
+    origin: {
+        label: 'Origin',
+        maxLength: 300
+    },
+    value: {
+        label: 'Value',
+        maxLength: 50
+    },
+    condition: {
+        label: 'Condition',
+        choices: {{ condition_choices|safe }},
+        customField: true,
+        maxLength: 100
+    },
+    smell: {
+        label: 'Smell',
+        maxLength: 300
+    },
+    taste: {
+        label: 'Taste',
+        maxLength: 300
+    },
+    origin_of_acquisition: {
+        label: 'Origin of Acquisition',
+        maxLength: 300
+    },
+    pattern: {
+        label: 'Pattern',
+        maxLength: 300
+    },
+    functionality: {
+        label: 'Functionality',
+        maxLength: 300
+    }
+};
+</script>
+<script src="{% static 'core/js/create_post.js' %}"></script>
+{% endblock %}
+

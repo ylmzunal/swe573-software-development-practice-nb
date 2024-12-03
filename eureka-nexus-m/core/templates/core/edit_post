@@ -1,0 +1,146 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}Edit Post{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4">
+    <h1 class="text-3xl font-bold mb-6">Edit Post</h1>
+    <form method="post" enctype="multipart/form-data" class="bg-white rounded-lg shadow-md p-6">
+        {% csrf_token %}
+        {{ form.non_field_errors }}
+        <div class="mb-4">
+            <label for="{{ form.title.id_for_label }}" class="block text-gray-700 font-bold mb-2">Title</label>
+            {{ form.title }}
+            {{ form.title.errors }}
+        </div>
+        <div class="mb-4">
+            <label for="{{ form.description.id_for_label }}" class="block text-gray-700 font-bold mb-2">Description</label>
+            {{ form.description }}
+            {{ form.description.errors }}
+        </div>
+        <div class="mb-4">
+            <label for="{{ form.image.id_for_label }}" class="block text-gray-700 font-bold mb-2">Image</label>
+            {% if post.image %}
+                <img src="{{ post.image.url }}" alt="Current image" class="mb-2 max-w-xs">
+            {% endif %}
+            {{ form.image }}
+            {{ form.image.errors }}
+        </div>
+        <div class="mb-4">
+            <h2 class="text-xl font-bold mb-2">Optional Attributes</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="optional-attributes">
+                {% for field in form %}
+                    {% if field.name not in 'title,description,image' %}
+                        <div class="attribute-box" data-field="{{ field.name }}">
+                            <label for="{{ field.id_for_label }}" class="block text-gray-700 font-bold mb-2">
+                                <input type="checkbox" class="attribute-checkbox mr-2" {% if field.value %}checked{% endif %}>
+                                {{ field.label }}
+                            </label>
+                            <div class="attribute-field {% if not field.value %}hidden{% endif %}">
+                                {{ field }}
+                                {{ field.errors }}
+                            </div>
+                        </div>
+                    {% endif %}
+                {% endfor %}
+            </div>
+        </div>
+        <div class="mb-4">
+            <h2 class="text-xl font-bold mb-2">Wikidata Tags</h2>
+            {{ formset.management_form }}
+            <div id="wikidata-tags">
+                {% for form in formset %}
+                    <div class="wikidata-tag-form mb-2">
+                        {{ form.as_p }}
+                    </div>
+                {% endfor %}
+            </div>
+            <button type="button" id="add-tag" class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 mt-2">Add Tag</button>
+        </div>
+        <button type="submit" class="bg-blue-500 text-white px-6 py-2 rounded hover:bg-blue-600">Update Post</button>
+    </form>
+</div>
+
+<style>
+    .wikidata-results {
+        position: absolute;
+        background-color: white;
+        border: 1px solid #ccc;
+        max-height: 200px;
+        overflow-y: auto;
+        z-index: 1000;
+    }
+    .wikidata-result {
+        padding: 5px;
+        cursor: pointer;
+    }
+    .wikidata-result:hover {
+        background-color: #f0f0f0;
+    }
+</style>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+    $(document).ready(function() {
+        // Dynamic attribute fields
+        $('.attribute-checkbox').change(function() {
+            $(this).closest('.attribute-box').find('.attribute-field').toggleClass('hidden');
+        });
+
+        // Wikidata search functionality
+        var formCount = {{ formset.total_form_count }};
+        $('#add-tag').click(function() {
+            var form = $('.wikidata-tag-form:first').clone(true);
+            form.find('input').val('');
+            form.find('input').each(function() {
+                var name = $(this).attr('name').replace('-0-', '-' + formCount + '-');
+                var id = 'id_' + name;
+                $(this).attr({'name': name, 'id': id}).val('');
+            });
+            form.find('label').each(function() {
+                var newFor = $(this).attr('for').replace('-0-', '-' + formCount + '-');
+                $(this).attr('for', newFor);
+            });
+            $('#wikidata-tags').append(form);
+            formCount++;
+            $('#id_wikidatatag_set-TOTAL_FORMS').val(formCount);
+        });
+
+        // Wikidata search
+        $(document).on('input', '[name$="-wikidata_id"]', function() {
+            var input = $(this);
+            var results = input.siblings('.wikidata-results');
+            if (results.length === 0) {
+                results = $('<div class="wikidata-results"></div>');
+                input.after(results);
+            }
+
+            clearTimeout(input.data('timer'));
+            input.data('timer', setTimeout(function() {
+                $.getJSON("{% url 'wikidata_search' %}", {q: input.val()}, function(data) {
+                    results.empty();
+                    $.each(data.results.slice(0, 5), function(i, item) {
+                        results.append(
+                            $('<div class="wikidata-result p-2 hover:bg-gray-100 cursor-pointer"></div>')
+                                .text(item.label + ' (' + item.description + ')')
+                                .click(function() {
+                                    input.val(item.id);
+                                    input.siblings('[name$="-label"]').val(item.label);
+                                    results.empty();
+                                })
+                        );
+                    });
+                });
+            }, 300));
+        });
+
+        $(document).on('click', function(e) {
+            if (!$(e.target).closest('.wikidata-results, [name$="-wikidata_id"]').length) {
+                $('.wikidata-results').empty();
+            }
+        });
+    });
+</script>
+{% endblock %}
+

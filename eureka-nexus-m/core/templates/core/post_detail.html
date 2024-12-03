@@ -1,0 +1,115 @@
+{% extends 'core/base.html' %}
+{% load static %}
+{% load post_extras %}
+
+{% block title %}{{ post.title }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card">
+                <img src="{{ post.image.url }}" class="card-img-top" alt="{{ post.title }}">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h2 class="card-title">{{ post.title }}</h2>
+                        <span class="badge {% if post.status == 'solved' %}bg-success{% else %}bg-warning{% endif %}">
+                            {{ post.status|title }}
+                        </span>
+                    </div>
+                    
+                    {% if user.is_authenticated and user == post.author %}
+                        <div class="mb-3">
+                            <form method="post" action="{% url 'update_post_status' post.pk %}" class="d-inline">
+                                {% csrf_token %}
+                                <select name="status" class="form-select d-inline-block w-auto me-2">
+                                    {% for value, label in post.STATUS_CHOICES %}
+                                        <option value="{{ value }}" {% if post.status == value %}selected{% endif %}>
+                                            {{ label }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                                <button type="submit" class="btn btn-primary">Update Status</button>
+                            </form>
+                            <a href="{% url 'delete_post' post.pk %}" class="btn btn-danger float-end">Delete Post</a>
+                        </div>
+                    {% endif %}
+
+                    <p class="card-text">{{ post.description }}</p>
+
+                    {% if post.other_multimedia %}
+                        <div class="mt-3">
+                            <h5>Additional Images</h5>
+                            <img src="{{ post.other_multimedia.url }}" class="img-fluid" alt="Additional image">
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Post Information</h5>
+                </div>
+                <div class="card-body">
+                    <p class="mb-1">
+                        <strong>Posted by:</strong> 
+                        {% if post.author %}
+                            {{ post.author.username }}
+                        {% else %}
+                            Anonymous
+                        {% endif %}
+                    </p>
+                    <p class="mb-1"><strong>Posted:</strong> {{ post.created_at|date:"F j, Y" }}</p>
+                    {% if post.updated_at != post.created_at %}
+                        <p class="mb-1"><strong>Last updated:</strong> {{ post.updated_at|date:"F j, Y" }}</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            {% if post.wikidata_tags.exists %}
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">Semantic Tags</h5>
+                    </div>
+                    <div class="card-body">
+                        {% for tag in post.wikidata_tags.all %}
+                            <div class="mb-2">
+                                <strong>{{ tag.get_tag_type_display }}:</strong>
+                                {% if tag.link %}
+                                    <a href="{{ tag.link }}" target="_blank">{{ tag.label }}</a>
+                                {% else %}
+                                    {{ tag.label }}
+                                {% endif %}
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            {% endif %}
+
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Attributes</h5>
+                </div>
+                <div class="card-body">
+                    {% for field in post|object_attributes %}
+                        <div class="mb-2">
+                            <strong>{{ field.label }}:</strong>
+                            {% if field.name in 'colour,shape,condition'|split:',' and field.value == 'other' %}
+                                {{ post|get_custom_value:field.name }}
+                            {% else %}
+                                {{ field.value }}
+                            {% endif %}
+                            {% if field.name in 'size,weight'|split:',' and field.exactness %}
+                                ({{ field.exactness }})
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
