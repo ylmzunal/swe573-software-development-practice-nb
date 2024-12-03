@@ -104,7 +104,7 @@ class WikidataTag(models.Model):
     tag_type = models.CharField(max_length=20, choices=TAG_TYPES)
     wikidata_id = models.CharField(max_length=20)  # Store Wikidata Q-number
     label = models.CharField(max_length=100)  # Store human-readable label
-    link = models.CharField(max_length=300, blank=True, null=True) # Store link to Wikidata item
+    link = models.CharField(max_length=300, blank=True, null=True)  # Store link to Wikidata item
 
     def __str__(self):
         return f"{self.tag_type}: {self.label}"

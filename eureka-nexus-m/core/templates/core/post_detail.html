@@ -1,6 +1,7 @@
 {% extends 'core/base.html' %}
 {% load static %}
 {% load post_extras %}
+{% load semantic_tags %}
 
 {% block title %}{{ post.title }}{% endblock %}
 
@@ -68,25 +69,17 @@
                 </div>
             </div>
 
-            {% if post.wikidata_tags.exists %}
-                <div class="card mb-4">
-                    <div class="card-header">
-                        <h5 class="mb-0">Semantic Tags</h5>
-                    </div>
-                    <div class="card-body">
-                        {% for tag in post.wikidata_tags.all %}
-                            <div class="mb-2">
-                                <strong>{{ tag.get_tag_type_display }}:</strong>
-                                {% if tag.link %}
-                                    <a href="{{ tag.link }}" target="_blank">{{ tag.label }}</a>
-                                {% else %}
-                                    {{ tag.label }}
-                                {% endif %}
-                            </div>
-                        {% endfor %}
+            <div class="card mb-3">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Semantic Tags</h5>
+                </div>
+                <div class="card-body">
+                    <div id="selectedTags" 
+                         data-tags='{{ post.wikidata_tags.all|serialize_tags|safe }}'
+                         class="semantic-tags-container">
                     </div>
                 </div>
-            {% endif %}
+            </div>
 
             <div class="card">
                 <div class="card-header">
@@ -111,5 +104,33 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'core/css/semantic_tags.css' %}">
+<style>
+    .semantic-tag {
+        display: flex;
+        align-items: center;
+        margin-bottom: 0.5rem;
+    }
+
+    .semantic-tag .badge {
+        min-width: 100px;
+        text-align: center;
+    }
+
+    .semantic-tag a {
+        text-decoration: none;
+    }
+
+    .semantic-tag a:hover {
+        text-decoration: underline;
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'core/js/semantic_tags.js' %}"></script>
 {% endblock %}
 

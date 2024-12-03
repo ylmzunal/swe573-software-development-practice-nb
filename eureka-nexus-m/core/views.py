@@ -9,6 +9,8 @@ from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.http import JsonResponse
 import requests
+from .models import WikidataTag
+from django.views.generic import DetailView
 
 def home(request):
     recent_posts = Post.objects.all().order_by('-created_at')[:6]  # Get 6 most recent posts
@@ -96,34 +98,59 @@ def post_list(request):
 
 def post_detail(request, pk):
     post = get_object_or_404(Post, pk=pk)
+    print("Semantic tags:", list(post.wikidata_tags.all()))
     return render(request, 'core/post_detail.html', {'post': post})
 
 @login_required
 def create_post(request):
     if request.method == 'POST':
+        # Add these debug prints
+        print("POST data:", request.POST)
+        print("FILES:", request.FILES)
+        
         form = PostForm(request.POST, request.FILES)
         formset = WikidataTagFormSet(request.POST, instance=Post())
+        
+        print("Formset initial data:", formset.initial_forms)
+        print("Formset is bound:", formset.is_bound)
         
         if form.is_valid() and formset.is_valid():
             post = form.save(commit=False)
             post.author = request.user if not request.POST.get('anonymous') else None
             post.save()
             
+            print("Post saved with ID:", post.id)
+            print("Formset cleaned data:", formset.cleaned_data)
+            
             formset.instance = post
-            formset.save()
+            try:
+                formset.save()
+                print("Formset saved successfully")
+                # Verify the tags were saved
+                saved_tags = list(post.wikidata_tags.all())
+                print("Saved tags:", saved_tags)
+                for tag in saved_tags:
+                    print(f"Tag details - Type: {tag.tag_type}, ID: {tag.wikidata_id}, Label: {tag.label}")
+            except Exception as e:
+                print("Error saving formset:", str(e))
+                print("Formset errors:", formset.errors)
+            
             messages.success(request, 'Post created successfully!')
             return redirect('post_detail', pk=post.pk)
+        else:
+            print("Form errors:", form.errors)
+            print("Formset errors:", formset.errors)
     else:
         form = PostForm()
         formset = WikidataTagFormSet(instance=Post())
     
-    # Add choices for JavaScript
     context = {
         'form': form,
         'formset': formset,
         'colour_choices': [list(choice) for choice in Post.COLOUR_CHOICES],
         'shape_choices': [list(choice) for choice in Post.SHAPE_CHOICES],
         'condition_choices': [list(choice) for choice in Post.CONDITION_CHOICES],
+        'tag_types': WikidataTag.TAG_TYPES,
     }
     
     return render(request, 'core/create_post.html', context)
@@ -208,3 +235,14 @@ def wikidata_search(request):
     else:
         results = []
     return JsonResponse({'results': results})
+
+class PostDetailView(DetailView):
+    model = Post
+    template_name = 'core/post_detail.html'
+    context_object_name = 'post'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        # Ensure semantic tags are prefetched
+        context['post'].semantic_tags.all()
+        return context

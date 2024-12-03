@@ -3,15 +3,50 @@ from django.contrib.auth.forms import UserCreationForm, UserChangeForm
 from .models import Profile, Post, WikidataTag
 from django.core.exceptions import ValidationError
 import re
+from django.forms import modelformset_factory, inlineformset_factory
 
 class ProfileCreationForm(UserCreationForm):
-    password2 = forms.CharField(label="Confirm Password", widget=forms.PasswordInput)
-    email = forms.EmailField(max_length=254, required=True)
-    username = forms.CharField(max_length=30, required=True)
+    password1 = forms.CharField(
+        label="Password",
+        widget=forms.PasswordInput(attrs={'class': 'form-control'}),
+        help_text="Must be at least 8 characters long and include numbers, letters, and special characters."
+    )
+    password2 = forms.CharField(
+        label="Confirm Password",
+        widget=forms.PasswordInput(attrs={'class': 'form-control'}),
+        help_text="Enter the same password as above, for verification."
+    )
+    email = forms.EmailField(
+        max_length=254,
+        required=True,
+        widget=forms.EmailInput(attrs={'class': 'form-control'})
+    )
+    username = forms.CharField(
+        max_length=30,
+        required=True,
+        widget=forms.TextInput(attrs={'class': 'form-control'})
+    )
+    first_name = forms.CharField(
+        max_length=30,
+        required=False,
+        widget=forms.TextInput(attrs={'class': 'form-control'})
+    )
+    last_name = forms.CharField(
+        max_length=30,
+        required=False,
+        widget=forms.TextInput(attrs={'class': 'form-control'})
+    )
 
     class Meta:
         model = Profile
         fields = ('username', 'email', 'first_name', 'last_name', 'password1', 'password2')
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Add Bootstrap classes to all fields
+        for field in self.fields.values():
+            if not isinstance(field.widget, forms.CheckboxInput):
+                field.widget.attrs['class'] = 'form-control'
 
     def clean_email(self):
         email = self.cleaned_data.get('email')
@@ -43,13 +78,13 @@ from django.contrib.auth.hashers import make_password
 class ProfileChangeForm(forms.ModelForm):
     new_password = forms.CharField(
         label="New Password",
-        widget=forms.PasswordInput,
+        widget=forms.PasswordInput(attrs={'class': 'form-control'}),
         required=False,
         help_text="Enter a new password if you want to change it."
     )
     confirm_password = forms.CharField(
         label="Confirm Password",
-        widget=forms.PasswordInput,
+        widget=forms.PasswordInput(attrs={'class': 'form-control'}),
         required=False,
         help_text="Re-enter the new password to confirm."
     )
@@ -58,7 +93,12 @@ class ProfileChangeForm(forms.ModelForm):
         model = Profile
         fields = ('first_name', 'last_name', 'email', 'profile_picture', 'birthday', 'bio')
         widgets = {
+            'first_name': forms.TextInput(attrs={'class': 'form-control'}),
+            'last_name': forms.TextInput(attrs={'class': 'form-control'}),
+            'email': forms.EmailInput(attrs={'class': 'form-control'}),
             'birthday': forms.DateInput(attrs={'type': 'date'}),
+            'bio': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+            'profile_picture': forms.FileInput(attrs={'class': 'form-control'})
         }
 
     def clean(self):
@@ -133,11 +173,12 @@ class PostForm(forms.ModelForm):
 class WikidataTagForm(forms.ModelForm):
     class Meta:
         model = WikidataTag
-        fields = ['tag_type', 'wikidata_id', 'label']
+        fields = ['tag_type', 'wikidata_id', 'label', 'link']
 
-WikidataTagFormSet = forms.inlineformset_factory(
-    Post, WikidataTag,
-    form=WikidataTagForm,
+WikidataTagFormSet = inlineformset_factory(
+    Post,
+    WikidataTag,
+    fields=('tag_type', 'wikidata_id', 'label', 'link'),
     extra=1,
     can_delete=True
 )

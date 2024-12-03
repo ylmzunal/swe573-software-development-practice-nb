@@ -65,24 +65,36 @@
         <!-- Wikidata Tags -->
         <div class="wikidata-tags mb-4">
             <h4>Semantic Tags</h4>
-            {{ formset.management_form }}
-            <div id="wikidata-formset">
-                {% for form in formset %}
-                    <div class="wikidata-form mb-3">
-                        {{ form.tag_type }}
-                        <div class="wikidata-search">
-                            <input type="text" class="wikidata-search-input" placeholder="Search Wikidata...">
-                            <div class="wikidata-results"></div>
-                        </div>
-                        {{ form.wikidata_id }}
-                        {{ form.label }}
-                        {% if not forloop.first %}
-                            <button type="button" class="remove-tag btn btn-danger btn-sm">Remove</button>
-                        {% endif %}
+            <div class="mb-3">
+                <select class="form-select mb-2" id="tagTypeSelector">
+                    <option value="">Select tag type...</option>
+                    {% for value, label in tag_types %}
+                        <option value="{{ value }}">{{ label }}</option>
+                    {% endfor %}
+                </select>
+                
+                <div class="wikidata-search position-relative" style="display: none;">
+                    <input type="text" class="form-control" id="wikidataSearch" 
+                           placeholder="Search Wikidata..." autocomplete="off">
+                    <div class="wikidata-results position-absolute w-100 bg-white border rounded shadow-sm" 
+                         style="display: none; z-index: 1000; max-height: 300px; overflow-y: auto;">
                     </div>
-                {% endfor %}
+                </div>
             </div>
-            <button type="button" id="add-tag" class="btn btn-secondary">Add Tag</button>
+            
+            <div id="selectedTags" class="mb-3">
+                <!-- Selected tags will be displayed here -->
+            </div>
+            
+            <!-- Hidden input to store tag data -->
+            {{ formset.management_form }}
+            <div id="tagFormset" style="display: none;">
+                <div class="formset-form">
+                    {% for field in formset.empty_form %}
+                        {{ field.as_hidden }}
+                    {% endfor %}
+                </div>
+            </div>
         </div>
 
         <button type="submit" class="btn btn-primary">Create Post</button>
@@ -124,6 +136,43 @@
     
     .wikidata-result-item:hover {
         background-color: #f5f5f5;
+    }
+    
+    .wikidata-result {
+        padding: 8px 12px;
+        cursor: pointer;
+        border-bottom: 1px solid #eee;
+    }
+    
+    .wikidata-result:hover {
+        background-color: #f8f9fa;
+    }
+    
+    .wikidata-result .title {
+        font-weight: 500;
+    }
+    
+    .wikidata-result .description {
+        font-size: 0.875rem;
+        color: #6c757d;
+    }
+    
+    .selected-tag {
+        display: inline-flex;
+        align-items: center;
+        background-color: #e9ecef;
+        border-radius: 4px;
+        padding: 4px 8px;
+        margin: 0 4px 4px 0;
+    }
+    
+    .selected-tag .remove-tag {
+        margin-left: 8px;
+        cursor: pointer;
+        color: #dc3545;
+        border: none;
+        background: none;
+        padding: 0 4px;
     }
 </style>
 {% endblock %}
@@ -195,5 +244,6 @@ const attributeConfig = {
 };
 </script>
 <script src="{% static 'core/js/create_post.js' %}"></script>
+<script src="{% static 'core/js/semantic_tags.js' %}"></script>
 {% endblock %}
 
