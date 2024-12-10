@@ -257,3 +257,13 @@ class WikidataTag(models.Model):
         if not self.link:
             self.link = f"https://www.wikidata.org/wiki/{self.wikidata_id}"
         super().save(*args, **kwargs)
+
+class PostAttribute(models.Model):
+    post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name='attributes')
+    name = models.CharField(max_length=100)
+    value = models.TextField()
+    instance_id = models.CharField(max_length=50)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['name', 'instance_id']

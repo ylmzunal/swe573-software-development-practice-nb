@@ -3,7 +3,7 @@ from django.contrib.auth import login, authenticate, logout
 from django.contrib.auth.forms import AuthenticationForm
 from .forms import ProfileCreationForm, ProfileChangeForm, PostForm, WikidataTagFormSet
 from django.contrib import messages
-from .models import Profile, Post
+from .models import Profile, Post, PostAttribute
 from django import forms
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
@@ -110,8 +110,24 @@ def create_post(request):
         if form.is_valid() and formset.is_valid():
             post = form.save(commit=False)
             post.author = request.user if not request.POST.get('anonymous') else None
-            post.save()
             
+            # Process multiple instances of attributes
+            for field_name, field_value in request.POST.items():
+                if '[' in field_name and ']' in field_name:
+                    base_name, instance_id = field_name.split('[')
+                    instance_id = instance_id.rstrip(']')
+                    
+                    # Create a new attribute instance
+                    # You'll need to create a new model for storing multiple attributes
+                    attribute = PostAttribute(
+                        post=post,
+                        name=base_name,
+                        value=field_value,
+                        instance_id=instance_id
+                    )
+                    attribute.save()
+            
+            post.save()
             formset.instance = post
             formset.save()
             
