@@ -54,6 +54,17 @@
                     <option value="origin_of_acquisition">Origin of Acquisition</option>
                     <option value="pattern">Pattern</option>
                     <option value="functionality">Functionality</option>
+                    <option value="material">Material</option>
+                    <option value="image_description">Image Description</option>
+                    <option value="icon_description">Icon Description</option>
+                    <option value="markings">Markings</option>
+                    <option value="print_description">Print Description</option>
+                    <option value="brand">Brand</option>
+                    <option value="time_period">Time Period</option>
+                    <option value="object_domain">Object Domain</option>
+                    <option value="hardness">Hardness</option>
+                    <option value="elasticity">Elasticity</option>
+                    <option value="transparency">Transparency</option>
                 </select>
                                         </div>
             
@@ -170,8 +181,23 @@
 const attributeConfig = {
     size: {
         label: 'Size',
-        hasExactness: true,
-        maxLength: 50
+        type: 'complex',
+        exactnessChoices: [
+            ['approximate', 'Approximate'],
+            ['exact', 'Exact']
+        ],
+        units: [
+            ['mm', 'Millimeter'],
+            ['cm', 'Centimeter'],
+            ['m', 'Meter'],
+            ['km', 'Kilometer'],
+            ['in', 'Inch'],
+            ['ft', 'Foot'],
+            ['yd', 'Yard'],
+            ['mi', 'Mile']
+        ],
+        dimensions: ['width', 'height', 'depth'],
+        maxLength: 100
     },
     colour: {
         label: 'Colour',
@@ -187,11 +213,40 @@ const attributeConfig = {
     },
     weight: {
         label: 'Weight',
-        hasExactness: true,
-        maxLength: 50
+        type: 'complex',
+        exactnessChoices: [
+            ['approximate', 'Approximate'],
+            ['exact', 'Exact']
+        ],
+        approximateChoices: [
+            ['lightweight', 'Lightweight'],
+            ['medium', 'Medium Weight'],
+            ['heavy', 'Heavy'],
+            ['other', 'Other']
+        ],
+        units: [
+            ['mg', 'Milligram'],
+            ['g', 'Gram'],
+            ['kg', 'Kilogram'],
+            ['t', 'Ton'],
+            ['oz', 'Ounce'],
+            ['lb', 'Pound'],
+            ['st', 'Stone']
+        ],
+        customField: true,
+        maxLength: 100
     },
     texture: {
         label: 'Texture',
+        choices: [
+            ['smooth', 'Smooth'],
+            ['rough', 'Rough'],
+            ['grainy', 'Grainy'],
+            ['polished', 'Polished'],
+            ['matte', 'Matte'],
+            ['other', 'Other']
+        ],
+        customField: true,
         maxLength: 300
     },
     origin: {
@@ -210,10 +265,28 @@ const attributeConfig = {
     },
     smell: {
         label: 'Smell',
+        choices: [
+            ['odorless', 'Odorless'],
+            ['chemical', 'Chemical'],
+            ['earthy', 'Earthy'],
+            ['metallic', 'Metallic'],
+            ['fragrant', 'Fragrant'],
+            ['other', 'Other']
+        ],
+        customField: true,
         maxLength: 300
     },
     taste: {
         label: 'Taste',
+        choices: [
+            ['sweet', 'Sweet'],
+            ['salty', 'Salty'],
+            ['metallic', 'Metallic'],
+            ['bitter', 'Bitter'],
+            ['sour', 'Sour'],
+            ['other', 'Other']
+        ],
+        customField: true,
         maxLength: 300
     },
     origin_of_acquisition: {
@@ -222,11 +295,121 @@ const attributeConfig = {
     },
     pattern: {
         label: 'Pattern',
+        choices: [
+            ['plain', 'Plain'],
+            ['patterned', 'Patterned'],
+            ['striped', 'Striped'],
+            ['checkered', 'Checkered'],
+            ['marbled', 'Marbled'],
+            ['other', 'Other']
+        ],
+        customField: true,
         maxLength: 300
     },
     functionality: {
         label: 'Functionality',
+        choices: [
+            ['rigid', 'Rigid'],
+            ['moving', 'Moving'],
+            ['adhesive', 'Adhesive'],
+            ['other', 'Other']
+        ],
+        customField: true,
         maxLength: 300
+    },
+    material: {
+        label: 'Material',
+        choices: [
+            ['metal', 'Metal'],
+            ['wood', 'Wood'],
+            ['plastic', 'Plastic'],
+            ['glass', 'Glass'],
+            ['fabric', 'Fabric'],
+            ['ceramic', 'Ceramic'],
+            ['other', 'Other']
+        ],
+        customField: true,
+        maxLength: 100
+    },
+    image_description: {
+        label: 'Image Description',
+        maxLength: 500
+    },
+    icon_description: {
+        label: 'Icon Description',
+        maxLength: 500
+    },
+    markings: {
+        label: 'Markings',
+        maxLength: 500
+    },
+    print_description: {
+        label: 'Print Description',
+        maxLength: 500
+    },
+    brand: {
+        label: 'Brand',
+        maxLength: 200
+    },
+    time_period: {
+        label: 'Time Period',
+        choices: [
+            ['ancient', 'Ancient'],
+            ['medieval', 'Medieval'],
+            ['modern', 'Modern'],
+            ['contemporary', 'Contemporary'],
+            ['other', 'Other']
+        ],
+        customField: true,
+        maxLength: 100
+    },
+    object_domain: {
+        label: 'Object Domain',
+        choices: [
+            ['art_design', 'Art and Design'],
+            ['technology', 'Technology'],
+            ['household', 'Household'],
+            ['fashion_accessories', 'Fashion and Accessories'],
+            ['tools_equipment', 'Tools and Equipment'],
+            ['toys_games', 'Toys and Games'],
+            ['historical_cultural', 'Historical and Cultural'],
+            ['other', 'Other']
+        ],
+        customField: true,
+        maxLength: 100
+    },
+    hardness: {
+        label: 'Hardness',
+        choices: [
+            ['soft', 'Soft'],
+            ['medium', 'Medium'],
+            ['hard', 'Hard'],
+            ['other', 'Other']
+        ],
+        customField: true,
+        maxLength: 100
+    },
+    elasticity: {
+        label: 'Elasticity',
+        choices: [
+            ['elastic', 'Elastic'],
+            ['non_elastic', 'Non-elastic'],
+            ['semi_elastic', 'Semi-elastic'],
+            ['other', 'Other']
+        ],
+        customField: true,
+        maxLength: 100
+    },
+    transparency: {
+        label: 'Transparency',
+        choices: [
+            ['transparent', 'Transparent'],
+            ['translucent', 'Translucent'],
+            ['opaque', 'Opaque'],
+            ['other', 'Other']
+        ],
+        customField: true,
+        maxLength: 100
     }
 };
 </script>
