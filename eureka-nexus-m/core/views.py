@@ -3,7 +3,7 @@ from django.contrib.auth import login, authenticate, logout
 from django.contrib.auth.forms import AuthenticationForm
 from .forms import ProfileCreationForm, ProfileChangeForm, PostForm, WikidataTagFormSet
 from django.contrib import messages
-from .models import Profile, Post, PostAttribute
+from .models import Profile, Post, PostAttribute, PostMultimedia
 from django import forms
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
@@ -112,6 +112,21 @@ def create_post(request):
             post = form.save(commit=False)
             post.author = request.user if not request.POST.get('anonymous') else None
             post.save()
+            
+            # Handle multimedia files
+            multimedia_files = request.FILES.getlist('multimedia_files')
+            for index, f in enumerate(multimedia_files):
+                file_type = 'image' if f.content_type.startswith('image/') else \
+                           'video' if f.content_type.startswith('video/') else \
+                           'audio' if f.content_type.startswith('audio/') else \
+                           'document'
+                
+                PostMultimedia.objects.create(
+                    post=post,
+                    file=f,
+                    file_type=file_type,
+                    order=index
+                )
             
             # Now process and save attributes
             attributes_to_create = []

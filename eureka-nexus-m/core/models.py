@@ -267,3 +267,40 @@ class PostAttribute(models.Model):
 
     class Meta:
         ordering = ['name', 'instance_id']
+
+class PostMultimedia(models.Model):
+    MULTIMEDIA_TYPES = [
+        ('image', 'Image'),
+        ('video', 'Video'),
+        ('audio', 'Audio'),
+        ('document', 'Document'),
+    ]
+
+    post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name='multimedia_files')
+    file = models.FileField(upload_to='post_multimedia/')
+    file_type = models.CharField(max_length=20, choices=MULTIMEDIA_TYPES)
+    title = models.CharField(max_length=200, blank=True)
+    description = models.TextField(blank=True)
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+    order = models.IntegerField(default=0)
+
+    class Meta:
+        ordering = ['order', 'uploaded_at']
+
+    def __str__(self):
+        return f"{self.get_file_type_display()} for {self.post.title}"
+
+    def get_file_extension(self):
+        return self.file.name.split('.')[-1].lower()
+
+    def is_image(self):
+        return self.get_file_extension() in ['jpg', 'jpeg', 'png', 'gif', 'webp']
+
+    def is_video(self):
+        return self.get_file_extension() in ['mp4', 'webm', 'ogg']
+
+    def is_audio(self):
+        return self.get_file_extension() in ['mp3', 'wav', 'ogg']
+
+    def is_document(self):
+        return self.get_file_extension() in ['pdf', 'doc', 'docx', 'txt']

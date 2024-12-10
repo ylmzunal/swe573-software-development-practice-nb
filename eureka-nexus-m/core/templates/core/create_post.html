@@ -29,6 +29,24 @@
                 {{ form.image }}
             </div>
             
+            <div class="additional-multimedia mb-4">
+                <h4>Additional Multimedia</h4>
+                <div class="multimedia-upload-container">
+                    <div class="multimedia-preview" id="multimediaPreview"></div>
+                    <div class="upload-controls">
+                        <input type="file" 
+                               class="form-control" 
+                               id="multimediaFiles" 
+                               name="multimedia_files" 
+                               multiple
+                               accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.txt">
+                    </div>
+                </div>
+                <div id="multimediaList" class="mt-3">
+                    <!-- Uploaded files will be listed here -->
+                </div>
+            </div>
+            
             <div class="form-check mb-3">
                 <input type="checkbox" class="form-check-input" id="anonymousPost" name="anonymous">
                 <label class="form-check-label" for="anonymousPost">Post Anonymously</label>
@@ -171,6 +189,45 @@
         border: none;
         background: none;
         padding: 0 4px;
+    }
+
+    .multimedia-preview {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+        gap: 1rem;
+        margin-bottom: 1rem;
+    }
+
+    .multimedia-item {
+        position: relative;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        padding: 0.5rem;
+    }
+
+    .multimedia-item img {
+        width: 100%;
+        height: auto;
+        object-fit: cover;
+    }
+
+    .multimedia-item .remove-btn {
+        position: absolute;
+        top: 5px;
+        right: 5px;
+        background: rgba(255, 0, 0, 0.7);
+        color: white;
+        border: none;
+        border-radius: 50%;
+        width: 24px;
+        height: 24px;
+        cursor: pointer;
+    }
+
+    .multimedia-type-icon {
+        font-size: 2rem;
+        text-align: center;
+        color: #6c757d;
     }
 </style>
 {% endblock %}
@@ -415,5 +472,64 @@ const attributeConfig = {
 </script>
 <script src="{% static 'core/js/create_post.js' %}"></script>
 <script src="{% static 'core/js/semantic_tags.js' %}"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const multimediaInput = document.getElementById('multimediaFiles');
+    const previewContainer = document.getElementById('multimediaPreview');
+    const multimediaList = document.getElementById('multimediaList');
+    const uploadedFiles = new Set();
+
+    multimediaInput.addEventListener('change', function(e) {
+        const files = Array.from(e.target.files);
+        
+        files.forEach(file => {
+            if (uploadedFiles.has(file.name)) {
+                return; // Skip duplicate files
+            }
+            
+            uploadedFiles.add(file.name);
+            const reader = new FileReader();
+            const itemDiv = document.createElement('div');
+            itemDiv.className = 'multimedia-item';
+            
+            // Create remove button
+            const removeBtn = document.createElement('button');
+            removeBtn.className = 'remove-btn';
+            removeBtn.innerHTML = '×';
+            removeBtn.onclick = function() {
+                itemDiv.remove();
+                uploadedFiles.delete(file.name);
+            };
+            
+            // Handle different file types
+            if (file.type.startsWith('image/')) {
+                reader.onload = function(e) {
+                    itemDiv.innerHTML = `
+                        <img src="${e.target.result}" alt="${file.name}">
+                        <div class="mt-2 small">${file.name}</div>
+                    `;
+                    itemDiv.appendChild(removeBtn);
+                };
+                reader.readAsDataURL(file);
+            } else {
+                let icon = 'file';
+                if (file.type.startsWith('video/')) icon = 'film';
+                else if (file.type.startsWith('audio/')) icon = 'music';
+                else if (file.type.includes('pdf')) icon = 'file-pdf';
+                
+                itemDiv.innerHTML = `
+                    <div class="multimedia-type-icon">
+                        <i class="fas fa-${icon}"></i>
+                    </div>
+                    <div class="mt-2 small">${file.name}</div>
+                `;
+                itemDiv.appendChild(removeBtn);
+            }
+            
+            previewContainer.appendChild(itemDiv);
+        });
+    });
+});
+</script>
 {% endblock %}
 

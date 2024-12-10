@@ -38,10 +38,39 @@
 
                     <p class="card-text">{{ post.description }}</p>
 
-                    {% if post.other_multimedia %}
-                        <div class="mt-3">
-                            <h5>Additional Images</h5>
-                            <img src="{{ post.other_multimedia.url }}" class="img-fluid" alt="Additional image">
+                    {% if post.multimedia_files.exists %}
+                        <div class="multimedia-section mt-4">
+                            <h4>Additional Multimedia</h4>
+                            <div class="multimedia-grid">
+                                {% for media in post.multimedia_files.all %}
+                                    <div class="multimedia-item">
+                                        {% if media.is_image %}
+                                            <img src="{{ media.file.url }}" 
+                                                 alt="{{ media.title|default:'Additional image' }}"
+                                                 class="img-fluid"
+                                                 data-bs-toggle="modal"
+                                                 data-bs-target="#mediaModal{{ media.id }}">
+                                        {% elif media.is_video %}
+                                            <video controls class="w-100">
+                                                <source src="{{ media.file.url }}" type="video/mp4">
+                                                Your browser does not support the video tag.
+                                            </video>
+                                        {% elif media.is_audio %}
+                                            <audio controls class="w-100">
+                                                <source src="{{ media.file.url }}" type="audio/mpeg">
+                                                Your browser does not support the audio tag.
+                                            </audio>
+                                        {% else %}
+                                            <a href="{{ media.file.url }}" 
+                                               class="document-link"
+                                               target="_blank">
+                                                <i class="fas fa-file-alt fa-3x"></i>
+                                                <span class="d-block mt-2">{{ media.file.name }}</span>
+                                            </a>
+                                        {% endif %}
+                                    </div>
+                                {% endfor %}
+                            </div>
                         </div>
                     {% endif %}
                 </div>
@@ -151,6 +180,23 @@
         </div>
     </div>
 </div>
+
+<!-- Add modals for image previews -->
+{% for media in post.multimedia_files.all %}
+    {% if media.is_image %}
+        <div class="modal fade" id="mediaModal{{ media.id }}" tabindex="-1">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-body">
+                        <img src="{{ media.file.url }}" 
+                             alt="{{ media.title|default:'Additional image' }}"
+                             class="img-fluid">
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+{% endfor %}
 {% endblock %}
 
 {% block extra_css %}
@@ -200,6 +246,41 @@
     
     .attribute-value {
         color: #6c757d;
+    }
+
+    .multimedia-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 1rem;
+        margin-top: 1rem;
+    }
+
+    .multimedia-item {
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        padding: 0.5rem;
+        background: #fff;
+    }
+
+    .multimedia-item img {
+        cursor: pointer;
+        transition: opacity 0.2s;
+    }
+
+    .multimedia-item img:hover {
+        opacity: 0.8;
+    }
+
+    .document-link {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-decoration: none;
+        color: #6c757d;
+    }
+
+    .document-link:hover {
+        color: #0d6efd;
     }
 </style>
 {% endblock %}
