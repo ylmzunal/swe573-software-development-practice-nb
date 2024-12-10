@@ -173,14 +173,15 @@ class PostForm(forms.ModelForm):
 class WikidataTagForm(forms.ModelForm):
     class Meta:
         model = WikidataTag
-        fields = ['tag_type', 'wikidata_id', 'label', 'link']
+        fields = ['wikidata_id', 'label', 'link']
 
 WikidataTagFormSet = inlineformset_factory(
     Post,
     WikidataTag,
-    fields=('tag_type', 'wikidata_id', 'label', 'link'),
+    fields=('wikidata_id', 'label', 'link'),
     extra=1,
-    can_delete=True
+    can_delete=True,
+    validate_min=0
 )
 
 

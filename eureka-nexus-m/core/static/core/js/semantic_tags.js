@@ -1,46 +1,20 @@
-let currentTagType = null;
-let selectedTags = new Map();
-let searchTimeout = null;
-
 document.addEventListener('DOMContentLoaded', function() {
-    const tagsContainer = document.getElementById('selectedTags');
+    console.log('Semantic tags JS loaded');
     
-    // If we're on the detail page (viewing tags)
-    if (tagsContainer && tagsContainer.dataset.tags) {
-        console.log('Found tags data:', tagsContainer.dataset.tags);
-        try {
-            const tags = JSON.parse(tagsContainer.dataset.tags);
-            displaySemanticTags(tags);
-        } catch (e) {
-            console.error('Error parsing tags:', e);
-        }
-        return; // Exit early since we don't need the create functionality
-    }
-
-    // If we're on the create page
-    const tagTypeSelector = document.getElementById('tagTypeSelector');
-    if (!tagTypeSelector) return; // Exit if we're not on the create page
-
-    const searchContainer = document.querySelector('.wikidata-search');
     const searchInput = document.getElementById('wikidataSearch');
     const resultsContainer = document.querySelector('.wikidata-results');
     const selectedTagsContainer = document.getElementById('selectedTags');
     const formsetContainer = document.getElementById('tagFormset');
-    const totalFormsInput = document.querySelector('[name$="-TOTAL_FORMS"]');
+    
+    // Track selected tags
+    const selectedTags = new Map();
+    let tagCounter = 0;
 
-    // Handle tag type selection
-    tagTypeSelector.addEventListener('change', function() {
-        currentTagType = this.value;
-        if (currentTagType) {
-            searchContainer.style.display = 'block';
-            searchInput.value = '';
-            searchInput.focus();
-        } else {
-            searchContainer.style.display = 'none';
-        }
-    });
+    // Initialize formset if needed
+    initializeFormset();
 
-    // Handle search input
+    // Handle search input with debounce
+    let searchTimeout = null;
     searchInput.addEventListener('input', function() {
         clearTimeout(searchTimeout);
         const query = this.value.trim();
@@ -51,128 +25,138 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         searchTimeout = setTimeout(() => {
+            console.log('Searching for:', query);  // Debug log
             fetch(`/wikidata-search/?q=${encodeURIComponent(query)}`)
                 .then(response => response.json())
                 .then(data => {
+                    console.log('Search results:', data);  // Debug log
                     resultsContainer.innerHTML = '';
                     
-                    data.results.forEach(item => {
-                        const resultDiv = document.createElement('div');
-                        resultDiv.className = 'wikidata-result';
-                        resultDiv.innerHTML = `
-                            <div class="title">${item.label}</div>
-                            <div class="description">${item.description || 'No description available'}</div>
-                        `;
-                        
-                        resultDiv.addEventListener('click', () => {
-                            addTag({
-                                type: currentTagType,
-                                id: item.id,
-                                label: item.label,
-                                link: `https://www.wikidata.org/entity/${item.id}`
+                    if (data.results && data.results.length > 0) {
+                        data.results.forEach(item => {
+                            const resultDiv = document.createElement('div');
+                            resultDiv.className = 'wikidata-result';
+                            resultDiv.innerHTML = `
+                                <div class="title">${item.label || item.id}</div>
+                                <div class="description">${item.description || 'No description available'}</div>
+                            `;
+                            
+                            resultDiv.addEventListener('click', () => {
+                                addTag(item);
+                                searchInput.value = '';
+                                resultsContainer.style.display = 'none';
                             });
-                            searchInput.value = '';
-                            resultsContainer.style.display = 'none';
-                            tagTypeSelector.value = '';
-                            searchContainer.style.display = 'none';
+                            
+                            resultsContainer.appendChild(resultDiv);
                         });
-                        
-                        resultsContainer.appendChild(resultDiv);
-                    });
-                    
-                    resultsContainer.style.display = data.results.length ? 'block' : 'none';
+                        resultsContainer.style.display = 'block';
+                    } else {
+                        resultsContainer.style.display = 'none';
+                    }
+                })
+                .catch(error => {
+                    console.error('Search error:', error);
+                    resultsContainer.innerHTML = '<div class="p-2">Error searching Wikidata</div>';
+                    resultsContainer.style.display = 'block';
                 });
         }, 300);
     });
 
-    // Close results when clicking outside
-    document.addEventListener('click', function(e) {
-        if (!searchContainer.contains(e.target)) {
-            resultsContainer.style.display = 'none';
+    // Add new function to add tags
+    function addTag(item) {
+        console.log('Adding tag:', item);
+        
+        if (selectedTags.has(item.id)) {
+            console.log('Tag already exists');
+            return;
         }
-    });
 
-    function addTag(tag) {
-        const tagId = `${tag.type}-${tag.id}`;
-        if (selectedTags.has(tagId)) return;
-
-        console.log("Adding tag:", tag);  // Debug log
-
-        // Store the full tag information
-        selectedTags.set(tagId, {
-            type: tag.type,
-            id: tag.id,
-            label: tag.label,
-            link: `https://www.wikidata.org/entity/${tag.id}`
-        });
-
-        // Create visual tag element
+        // Create tag element
         const tagElement = document.createElement('div');
         tagElement.className = 'selected-tag';
         tagElement.innerHTML = `
-            <span>${tag.label}</span>
-            <a href="${tag.link}" target="_blank" class="ms-2">
-                <i class="fas fa-external-link-alt"></i>
-            </a>
-            <button type="button" class="remove-tag">&times;</button>
+            <span>${item.label || item.id}</span>
+            <button type="button" class="remove-tag">×</button>
         `;
 
         // Add remove functionality
-        tagElement.querySelector('.remove-tag').addEventListener('click', () => {
-            selectedTags.delete(tagId);
+        const removeButton = tagElement.querySelector('.remove-tag');
+        removeButton.addEventListener('click', () => {
+            removeTag(item.id);
             tagElement.remove();
-            updateFormset();
         });
 
+        // Add to selected tags container
         selectedTagsContainer.appendChild(tagElement);
-        
-        // Update hidden formset
+
+        // Store tag data
+        selectedTags.set(item.id, {
+            id: item.id,
+            label: item.label || item.id,
+            link: `https://www.wikidata.org/wiki/${item.id}`
+        });
+
+        // Update formset
         updateFormset();
-        
-        // Debug log the current state
-        console.log("Current tags:", Array.from(selectedTags.values()));
+    }
+
+    function removeTag(tagId) {
+        console.log('Removing tag:', tagId);
+        selectedTags.delete(tagId);
+        updateFormset();
+    }
+
+    function initializeFormset() {
+        if (!document.querySelector('[name="tags-TOTAL_FORMS"]')) {
+            formsetContainer.innerHTML = `
+                <input type="hidden" name="tags-TOTAL_FORMS" value="0">
+                <input type="hidden" name="tags-INITIAL_FORMS" value="0">
+                <input type="hidden" name="tags-MIN_NUM_FORMS" value="0">
+                <input type="hidden" name="tags-MAX_NUM_FORMS" value="1000">
+            `;
+        }
     }
 
     function updateFormset() {
-        console.log("Updating formset with tags:", Array.from(selectedTags.values()));
-        
-        // Clear existing forms except the empty form template
-        const formTemplate = formsetContainer.querySelector('.formset-form');
+        // Clear existing formset fields
         formsetContainer.innerHTML = '';
-        formsetContainer.appendChild(formTemplate.cloneNode(true));
+        
+        // Re-initialize management form
+        initializeFormset();
 
-        // Create new forms for each tag
+        // Add fields for each selected tag
         let index = 0;
-        selectedTags.forEach((tag, tagId) => {
-            console.log("Creating form for tag:", tag);
-            const form = formTemplate.cloneNode(true);
-            
-            // Update all form field names and ids
-            form.querySelectorAll('input').forEach(input => {
-                const oldName = input.name;
-                const newName = oldName.replace('__prefix__', index.toString());
-                input.name = newName;
-                input.id = input.id.replace('__prefix__', index.toString());
-                
-                // Set the appropriate value based on the field name
-                if (newName.endsWith('-tag_type')) {
-                    input.value = tag.type;
-                } else if (newName.endsWith('-wikidata_id')) {
-                    input.value = tag.id;
-                } else if (newName.endsWith('-label')) {
-                    input.value = tag.label;
-                } else if (newName.endsWith('-link')) {
-                    input.value = tag.link;
-                }
-            });
-            
-            formsetContainer.appendChild(form);
+        selectedTags.forEach((tag) => {
+            formsetContainer.innerHTML += `
+                <div style="display: none;">
+                    <input type="hidden" name="tags-${index}-wikidata_id" value="${tag.id}">
+                    <input type="hidden" name="tags-${index}-label" value="${tag.label}">
+                    <input type="hidden" name="tags-${index}-link" value="${tag.link}">
+                    <input type="hidden" name="tags-${index}-id" value="">
+                </div>
+            `;
             index++;
         });
 
         // Update total forms count
-        totalFormsInput.value = selectedTags.size;
-        console.log("Final formset HTML:", formsetContainer.innerHTML);
+        document.querySelector('[name="tags-TOTAL_FORMS"]').value = selectedTags.size;
+    }
+
+    // Load existing tags if any (for edit form)
+    const existingTags = selectedTagsContainer.dataset.tags;
+    if (existingTags) {
+        try {
+            const tags = JSON.parse(existingTags);
+            tags.forEach(tag => {
+                addTag({
+                    id: tag.wikidata_id,
+                    label: tag.label,
+                    link: tag.link
+                });
+            });
+        } catch (e) {
+            console.error('Error loading existing tags:', e);
+        }
     }
 });
 
@@ -205,6 +189,11 @@ function displaySemanticTags(tags) {
 }
 
 document.getElementById('postForm')?.addEventListener('submit', function(e) {
+    console.log('Form submitting...');
+    console.log('Selected tags:', Array.from(selectedTags.values()));
+    console.log('Formset HTML:', document.getElementById('tagFormset').innerHTML);
+    console.log('Total forms:', document.querySelector('[name="tags-TOTAL_FORMS"]').value);
+    
     // Debug log before submission
     console.log("Form submission - Total tags:", selectedTags.size);
     console.log("Form submission - Tags data:", Array.from(selectedTags.values()));

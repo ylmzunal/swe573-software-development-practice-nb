@@ -89,22 +89,15 @@ class Post(models.Model):
         return self.title
 
 class WikidataTag(models.Model):
-    TAG_TYPES = [
-        ('images', 'Images'),
-        ('icons', 'Icons'),
-        ('markings', 'Markings'),
-        ('print', 'Print'),
-        ('brand', 'Brand'),
-        ('time_period', 'Time Period'),
-        ('object_domain', 'Object Domain'),
-        ('other', 'Other'),
-    ]
-    
     post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name='wikidata_tags')
-    tag_type = models.CharField(max_length=20, choices=TAG_TYPES)
-    wikidata_id = models.CharField(max_length=20)  # Store Wikidata Q-number
-    label = models.CharField(max_length=100)  # Store human-readable label
-    link = models.CharField(max_length=300, blank=True, null=True)  # Store link to Wikidata item
+    wikidata_id = models.CharField(max_length=20)
+    label = models.CharField(max_length=100)
+    link = models.CharField(max_length=300, blank=True, null=True)
 
     def __str__(self):
-        return f"{self.tag_type}: {self.label}"
+        return f"{self.label} ({self.wikidata_id})"
+
+    def save(self, *args, **kwargs):
+        if not self.link:
+            self.link = f"https://www.wikidata.org/wiki/{self.wikidata_id}"
+        super().save(*args, **kwargs)

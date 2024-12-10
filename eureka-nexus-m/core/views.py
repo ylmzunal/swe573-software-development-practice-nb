@@ -104,45 +104,22 @@ def post_detail(request, pk):
 @login_required
 def create_post(request):
     if request.method == 'POST':
-        # Add these debug prints
-        print("POST data:", request.POST)
-        print("FILES:", request.FILES)
-        
         form = PostForm(request.POST, request.FILES)
-        formset = WikidataTagFormSet(request.POST, instance=Post())
-        
-        print("Formset initial data:", formset.initial_forms)
-        print("Formset is bound:", formset.is_bound)
+        formset = WikidataTagFormSet(request.POST, prefix='tags')
         
         if form.is_valid() and formset.is_valid():
             post = form.save(commit=False)
             post.author = request.user if not request.POST.get('anonymous') else None
             post.save()
             
-            print("Post saved with ID:", post.id)
-            print("Formset cleaned data:", formset.cleaned_data)
-            
             formset.instance = post
-            try:
-                formset.save()
-                print("Formset saved successfully")
-                # Verify the tags were saved
-                saved_tags = list(post.wikidata_tags.all())
-                print("Saved tags:", saved_tags)
-                for tag in saved_tags:
-                    print(f"Tag details - Type: {tag.tag_type}, ID: {tag.wikidata_id}, Label: {tag.label}")
-            except Exception as e:
-                print("Error saving formset:", str(e))
-                print("Formset errors:", formset.errors)
+            formset.save()
             
             messages.success(request, 'Post created successfully!')
             return redirect('post_detail', pk=post.pk)
-        else:
-            print("Form errors:", form.errors)
-            print("Formset errors:", formset.errors)
     else:
         form = PostForm()
-        formset = WikidataTagFormSet(instance=Post())
+        formset = WikidataTagFormSet(prefix='tags')
     
     context = {
         'form': form,
@@ -150,7 +127,6 @@ def create_post(request):
         'colour_choices': [list(choice) for choice in Post.COLOUR_CHOICES],
         'shape_choices': [list(choice) for choice in Post.SHAPE_CHOICES],
         'condition_choices': [list(choice) for choice in Post.CONDITION_CHOICES],
-        'tag_types': WikidataTag.TAG_TYPES,
     }
     
     return render(request, 'core/create_post.html', context)
@@ -228,13 +204,18 @@ def post_list(request):
 def wikidata_search(request):
     query = request.GET.get('q', '')
     if query:
-        url = f"https://www.wikidata.org/w/api.php?action=wbsearchentities&search={query}&language=en&format=json&limit=5"
-        response = requests.get(url)
-        data = response.json()
-        results = data.get('search', [])
-    else:
-        results = []
-    return JsonResponse({'results': results})
+        try:
+            url = f"https://www.wikidata.org/w/api.php?action=wbsearchentities&search={query}&language=en&format=json&limit=5&origin=*"
+            response = requests.get(url)
+            response.raise_for_status()  # Raise exception for bad status codes
+            data = response.json()
+            results = data.get('search', [])
+            #print("Wikidata search results:", results)  # Debug print
+            return JsonResponse({'results': results})
+        except Exception as e:
+            print(f"Wikidata search error: {str(e)}")  # Debug print
+            return JsonResponse({'error': str(e)}, status=500)
+    return JsonResponse({'results': []})
 
 class PostDetailView(DetailView):
     model = Post

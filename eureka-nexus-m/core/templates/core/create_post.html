@@ -65,15 +65,8 @@
         <!-- Wikidata Tags -->
         <div class="wikidata-tags mb-4">
             <h4>Semantic Tags</h4>
-            <div class="mb-3">
-                <select class="form-select mb-2" id="tagTypeSelector">
-                    <option value="">Select tag type...</option>
-                    {% for value, label in tag_types %}
-                        <option value="{{ value }}">{{ label }}</option>
-                    {% endfor %}
-                </select>
-                
-                <div class="wikidata-search position-relative" style="display: none;">
+            <div class="mb-3">                
+                <div class="wikidata-search position-relative">
                     <input type="text" class="form-control" id="wikidataSearch" 
                            placeholder="Search Wikidata..." autocomplete="off">
                     <div class="wikidata-results position-absolute w-100 bg-white border rounded shadow-sm" 
@@ -86,14 +79,8 @@
                 <!-- Selected tags will be displayed here -->
             </div>
             
-            <!-- Hidden input to store tag data -->
-            {{ formset.management_form }}
             <div id="tagFormset" style="display: none;">
-                <div class="formset-form">
-                    {% for field in formset.empty_form %}
-                        {{ field.as_hidden }}
-                    {% endfor %}
-                </div>
+                <!-- Hidden formset fields will be dynamically added here -->
             </div>
         </div>
 
