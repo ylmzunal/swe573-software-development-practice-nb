@@ -1,4 +1,5 @@
 from django import template
+import json
 
 register = template.Library()
 
@@ -50,3 +51,25 @@ def get_custom_field(form, field_name):
     if hasattr(form, 'fields') and custom_field_name in form.fields:
         return form[custom_field_name]
     return None 
+
+@register.filter
+def parse_json(value):
+    """
+    Parse a JSON string into a Python object.
+    If parsing fails, return the original value.
+    """
+    try:
+        return json.loads(value)
+    except (json.JSONDecodeError, TypeError):
+        return value
+
+@register.filter
+def get_custom_value_from_json(attribute):
+    """
+    Get custom value from a JSON-encoded attribute value
+    """
+    try:
+        data = json.loads(attribute.value)
+        return data.get('custom_value', '')
+    except (json.JSONDecodeError, TypeError, AttributeError):
+        return ''

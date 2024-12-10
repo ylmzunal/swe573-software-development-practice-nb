@@ -49,6 +49,7 @@
         </div>
 
         <div class="col-md-4">
+            <!-- Post Information Card -->
             <div class="card mb-4">
                 <div class="card-header">
                     <h5 class="mb-0">Post Information</h5>
@@ -69,6 +70,63 @@
                 </div>
             </div>
 
+            <!-- Attributes Card -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Attributes</h5>
+                </div>
+                <div class="card-body p-0">
+                    <!-- Dynamic Attributes -->
+                    {% regroup post.attributes.all by name as attribute_groups %}
+                    {% for group in attribute_groups %}
+                        <div class="attribute-group border-bottom p-3">
+                            <h6 class="attribute-group-title mb-2">{{ group.grouper|title }}</h6>
+                            {% for attribute in group.list %}
+                                <div class="attribute-instance mb-2">
+                                    {% if not forloop.first %}
+                                        <div class="instance-separator mb-2"></div>
+                                    {% endif %}
+                                    {% if attribute.name == 'weight' %}
+                                        {% include 'core/partials/weight_attribute.html' with attribute=attribute %}
+                                    {% elif attribute.name == 'size' %}
+                                        {% include 'core/partials/size_attribute.html' with attribute=attribute %}
+                                    {% else %}
+                                        <div class="attribute-value">
+                                            {% with data=attribute.value|parse_json %}
+                                                {{ data.value }}
+                                                {% if data.value == 'other' and data.custom_value %}
+                                                    ({{ data.custom_value }})
+                                                {% endif %}
+                                            {% endwith %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% endfor %}
+
+                    <!-- Legacy Attributes (for backward compatibility) -->
+                    {% for field in post|object_attributes %}
+                        {% if field.value %}
+                            <div class="attribute-group border-bottom p-3">
+                                <h6 class="mb-2">{{ field.label }}</h6>
+                                <div class="attribute-value">
+                                    {% if field.name in 'colour,shape,condition'|split:',' and field.value == 'other' %}
+                                        {{ post|get_custom_value:field.name }}
+                                    {% else %}
+                                        {{ field.value }}
+                                    {% endif %}
+                                    {% if field.name in 'size,weight'|split:',' and field.exactness %}
+                                        ({{ field.exactness }})
+                                    {% endif %}
+                                </div>
+                            </div>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Semantic Tags Card -->
             <div class="card mb-3">
                 <div class="card-header">
                     <h5 class="card-title mb-0">Semantic Tags</h5>
@@ -88,27 +146,6 @@
                     {% else %}
                         <p class="text-muted mb-0">No semantic tags added</p>
                     {% endif %}
-                </div>
-            </div>
-
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="mb-0">Attributes</h5>
-                </div>
-                <div class="card-body">
-                    {% for field in post|object_attributes %}
-                        <div class="mb-2">
-                            <strong>{{ field.label }}:</strong>
-                            {% if field.name in 'colour,shape,condition'|split:',' and field.value == 'other' %}
-                                {{ post|get_custom_value:field.name }}
-                            {% else %}
-                                {{ field.value }}
-                            {% endif %}
-                            {% if field.name in 'size,weight'|split:',' and field.exactness %}
-                                ({{ field.exactness }})
-                            {% endif %}
-                        </div>
-                    {% endfor %}
                 </div>
             </div>
         </div>
@@ -141,6 +178,28 @@
         display: flex;
         flex-direction: column;
         gap: 0.5rem;
+    }
+
+    .attribute-group {
+        background-color: #fff;
+    }
+    
+    .attribute-group:last-child {
+        border-bottom: none !important;
+    }
+    
+    .attribute-group-title {
+        color: #495057;
+        font-weight: 600;
+    }
+    
+    .instance-separator {
+        border-top: 1px dashed #dee2e6;
+        margin: 0.5rem 0;
+    }
+    
+    .attribute-value {
+        color: #6c757d;
     }
 </style>
 {% endblock %}

@@ -11,6 +11,7 @@ from django.http import JsonResponse
 import requests
 from .models import WikidataTag
 from django.views.generic import DetailView
+import json
 
 def home(request):
     recent_posts = Post.objects.all().order_by('-created_at')[:6]  # Get 6 most recent posts
@@ -110,24 +111,105 @@ def create_post(request):
         if form.is_valid() and formset.is_valid():
             post = form.save(commit=False)
             post.author = request.user if not request.POST.get('anonymous') else None
+            post.save()
             
-            # Process multiple instances of attributes
+            # Now process and save attributes
+            attributes_to_create = []
+            size_data = {}  # Dictionary to collect size-related fields by instance
+            weight_data = {}  # Dictionary to collect weight-related fields by instance
+            
             for field_name, field_value in request.POST.items():
                 if '[' in field_name and ']' in field_name:
                     base_name, instance_id = field_name.split('[')
                     instance_id = instance_id.rstrip(']')
                     
-                    # Create a new attribute instance
-                    # You'll need to create a new model for storing multiple attributes
-                    attribute = PostAttribute(
-                        post=post,
-                        name=base_name,
-                        value=field_value,
-                        instance_id=instance_id
-                    )
-                    attribute.save()
+                    # Handle size fields
+                    if base_name.startswith('size_') or base_name in ['width', 'height', 'depth']:
+                        if instance_id not in size_data:
+                            size_data[instance_id] = {}
+                        size_data[instance_id][base_name] = field_value
+                        continue
+                        
+                    # Handle weight fields
+                    if base_name.startswith('weight_') or base_name == 'exact_weight':
+                        if instance_id not in weight_data:
+                            weight_data[instance_id] = {}
+                        weight_data[instance_id][base_name] = field_value
+                        continue
+                    
+                    # Handle regular attributes
+                    if not base_name.startswith('custom_'):
+                        attribute_data = {
+                            'value': field_value
+                        }
+                        
+                        # Check for custom value if this is an 'other' selection
+                        custom_field_name = f'custom_{base_name}[{instance_id}]'
+                        if field_value == 'other' and custom_field_name in request.POST:
+                            attribute_data['custom_value'] = request.POST[custom_field_name]
+                        
+                        attributes_to_create.append(
+                            PostAttribute(
+                                post=post,
+                                name=base_name,
+                                value=json.dumps(attribute_data),
+                                instance_id=instance_id
+                            )
+                        )
             
-            post.save()
+            # Process collected size data
+            for instance_id, data in size_data.items():
+                if 'size_type' in data:
+                    size_attribute = {
+                        'type': data['size_type']
+                    }
+                    if data['size_type'] == 'approximate':
+                        size_attribute['approximate_size'] = data.get('approximate_size', '')
+                    else:
+                        size_attribute.update({
+                            'width': data.get('width', ''),
+                            'height': data.get('height', ''),
+                            'depth': data.get('depth', ''),
+                            'size_unit': data.get('size_unit', '')
+                        })
+                    attributes_to_create.append(
+                        PostAttribute(
+                            post=post,
+                            name='size',
+                            value=json.dumps(size_attribute),
+                            instance_id=instance_id
+                        )
+                    )
+            
+            # Process collected weight data
+            for instance_id, data in weight_data.items():
+                if 'weight_type' in data:
+                    weight_attribute = {
+                        'type': data['weight_type']
+                    }
+                    if data['weight_type'] == 'approximate':
+                        weight_attribute.update({
+                            'approximate_weight': data.get('approximate_weight', ''),
+                            'custom_approximate_weight': data.get('custom_approximate_weight', '')
+                        })
+                    else:
+                        weight_attribute.update({
+                            'exact_weight': data.get('exact_weight', ''),
+                            'weight_unit': data.get('weight_unit', '')
+                        })
+                    attributes_to_create.append(
+                        PostAttribute(
+                            post=post,
+                            name='weight',
+                            value=json.dumps(weight_attribute),
+                            instance_id=instance_id
+                        )
+                    )
+            
+            # Bulk create all attributes
+            if attributes_to_create:
+                PostAttribute.objects.bulk_create(attributes_to_create)
+            
             formset.instance = post
             formset.save()
             
