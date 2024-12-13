@@ -21,19 +21,20 @@
             {% for post in recent_posts %}
                 <div class="col-md-4 mb-4">
                     <div class="card h-100">
-                        {% if post.image %}
-                            <img src="{{ post.image.url }}" class="card-img-top" alt="{{ post.title }}" style="height: 200px; object-fit: cover;">
-                        {% endif %}
+                        <img src="{{ post.image.url }}" class="card-img-top" alt="{{ post.title }}">
                         <div class="card-body">
                             <h5 class="card-title">{{ post.title }}</h5>
-                            <p class="card-text">{{ post.description|truncatechars:100 }}</p>
-                        </div>
-                        <div class="card-footer">
-                            <small class="text-muted">Posted {{ post.created_at|timesince }} ago</small>
-                            <span class="badge bg-secondary ms-2">
-                                {{ post.comments.count }} comment{{ post.comments.count|pluralize }}
-                            </span>
-                            <a href="{% url 'post_detail' post.pk %}" class="btn btn-sm btn-outline-primary float-end">View Details</a>
+                            <p class="card-text">{{ post.description|truncatewords:30 }}</p>
+                            
+                            {% with content_type_id=post.get_content_type.id %}
+                                {% include 'core/partials/vote_buttons.html' with 
+                                    content_type_id=content_type_id
+                                    object_id=post.id 
+                                    vote_counts=post.get_vote_counts 
+                                    user_vote=post.get_user_vote user=user %}
+                            {% endwith %}
+                            
+                            <a href="{% url 'post_detail' post.pk %}" class="btn btn-primary mt-2">Read More</a>
                         </div>
                     </div>
                 </div>
