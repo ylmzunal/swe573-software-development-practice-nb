@@ -1,6 +1,6 @@
 from django import forms
 from django.contrib.auth.forms import UserCreationForm, UserChangeForm
-from .models import Profile, Post, WikidataTag
+from .models import Profile, Post, WikidataTag, Comment
 from django.core.exceptions import ValidationError
 import re
 from django.forms import modelformset_factory, inlineformset_factory
@@ -219,6 +219,48 @@ WikidataTagFormSet = inlineformset_factory(
     can_delete=True,
     validate_min=0
 )
+
+class CommentForm(forms.ModelForm):
+    def __init__(self, *args, user=None, post=None, instance=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.user = user
+        self.post = post
+        
+        # Set tag choices based on permissions
+        choices = [('', 'No tag')]
+        if user and post:
+            # Regular users can only set question or hint when creating
+            if not instance:  # Only for new comments
+                choices.extend([
+                    ('question', 'Question'),
+                    ('hint', 'Hint'),
+                ])
+            # Post owner can mark as answer anytime
+            if user == post.author:
+                choices.extend([('answer', 'Answer')])
+        
+        self.fields['tag'] = forms.ChoiceField(
+            choices=choices,
+            required=False,
+            widget=forms.Select(attrs={'class': 'form-select'})
+        )
+
+    def clean_tag(self):
+        tag = self.cleaned_data.get('tag')
+        if tag == 'answer' and self.user != self.post.author:
+            raise forms.ValidationError("Only the post owner can add answer tags.")
+        return tag
+
+    class Meta:
+        model = Comment
+        fields = ['content', 'tag']
+        widgets = {
+            'content': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 3,
+                'placeholder': 'Write your comment...'
+            })
+        }
 
 
 

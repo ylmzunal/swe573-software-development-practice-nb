@@ -30,6 +30,9 @@
                         </div>
                         <div class="card-footer">
                             <small class="text-muted">Posted {{ post.created_at|timesince }} ago</small>
+                            <span class="badge bg-secondary ms-2">
+                                {{ post.comments.count }} comment{{ post.comments.count|pluralize }}
+                            </span>
                             <a href="{% url 'post_detail' post.pk %}" class="btn btn-sm btn-outline-primary float-end">View Details</a>
                         </div>
                     </div>

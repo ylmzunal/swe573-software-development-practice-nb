@@ -1,9 +1,9 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import login, authenticate, logout
 from django.contrib.auth.forms import AuthenticationForm
-from .forms import ProfileCreationForm, ProfileChangeForm, PostForm, WikidataTagFormSet
+from .forms import ProfileCreationForm, ProfileChangeForm, PostForm, WikidataTagFormSet, CommentForm
 from django.contrib import messages
-from .models import Profile, Post, PostAttribute, PostMultimedia
+from .models import Profile, Post, PostAttribute, PostMultimedia, Comment
 from django import forms
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
@@ -99,8 +99,12 @@ def post_list(request):
 
 def post_detail(request, pk):
     post = get_object_or_404(Post, pk=pk)
+    comment_form = CommentForm(user=request.user, post=post) if request.user.is_authenticated else None
     print("Semantic tags:", list(post.wikidata_tags.all()))
-    return render(request, 'core/post_detail.html', {'post': post})
+    return render(request, 'core/post_detail.html', {
+        'post': post,
+        'comment_form': comment_form
+    })
 
 @login_required
 def create_post(request):
@@ -340,3 +344,81 @@ class PostDetailView(DetailView):
         # Ensure semantic tags are prefetched
         context['post'].semantic_tags.all()
         return context
+
+@login_required
+def add_comment(request, post_id):
+    post = get_object_or_404(Post, pk=post_id)
+    if request.method == 'POST':
+        form = CommentForm(request.POST, user=request.user, post=post)
+        if form.is_valid():
+            comment = form.save(commit=False)
+            comment.post = post
+            comment.author = request.user
+            comment.save()
+            return redirect('post_detail', pk=post_id)
+    return redirect('post_detail', pk=post_id)
+
+@login_required
+def add_reply(request, post_id, comment_id):
+    post = get_object_or_404(Post, pk=post_id)
+    parent_comment = get_object_or_404(Comment, pk=comment_id)
+    if request.method == 'POST':
+        form = CommentForm(request.POST, user=request.user, post=post)
+        if form.is_valid():
+            reply = form.save(commit=False)
+            reply.post = post
+            reply.author = request.user
+            reply.parent = parent_comment
+            reply.save()
+    return redirect('post_detail', pk=post_id)
+
+@login_required
+def delete_comment(request, comment_id):
+    comment = get_object_or_404(Comment, pk=comment_id)
+    if request.user == comment.author and request.method == 'POST':
+        comment.is_deleted = True
+        comment.save()
+        return JsonResponse({'status': 'success'})
+    return JsonResponse({'status': 'error'}, status=403)
+
+@login_required
+def edit_comment_tag(request, comment_id):
+    comment = get_object_or_404(Comment, pk=comment_id)
+    
+    if request.method == 'POST':
+        new_tag = request.POST.get('tag')
+        print(f"Received tag update request: comment_id={comment_id}, new_tag='{new_tag}'")  # Debug log
+        
+        # Only post owner can edit tags, and only to mark as answer
+        if request.user != comment.post.author:
+            return JsonResponse({
+                'status': 'error',
+                'message': 'Only the post owner can edit comment tags'
+            }, status=403)
+        
+        if new_tag and new_tag != 'answer':
+            return JsonResponse({
+                'status': 'error',
+                'message': 'Post owner can only mark comments as answers'
+            }, status=403)
+        
+        try:
+            comment.tag = new_tag
+            comment.save()
+            
+            return JsonResponse({
+                'status': 'success',
+                'tag': new_tag,
+                'tag_display': comment.get_tag_display() if new_tag else ''
+            })
+        except Exception as e:
+            print(f"Error updating comment tag: {str(e)}")  # Debug log
+            return JsonResponse({
+                'status': 'error',
+                'message': 'Error saving comment tag'
+            }, status=500)
+        
+    return JsonResponse({
+        'status': 'error',
+        'message': 'Invalid request method'
+    }, status=400)

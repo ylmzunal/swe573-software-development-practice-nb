@@ -1,0 +1,30 @@
+{% load static %}
+
+<div class="comments-section mt-4">
+    <h4>Comments</h4>
+    
+    {% if user.is_authenticated %}
+        <form method="post" action="{% url 'add_comment' post.pk %}" class="mb-4">
+            {% csrf_token %}
+            {{ comment_form.content }}
+            <div class="d-flex justify-content-between align-items-center mt-2">
+                <div class="tag-selector">
+                    {{ comment_form.tag }}
+                </div>
+                <button type="submit" class="btn btn-primary">Post Comment</button>
+            </div>
+        </form>
+    {% else %}
+        <div class="alert alert-info">
+            Please <a href="{% url 'login' %}">login</a> to comment.
+        </div>
+    {% endif %}
+
+    <div class="comments-list">
+        {% for comment in post.comments.all %}
+            {% if not comment.parent %}  {# Only show top-level comments #}
+                {% include 'core/partials/comment.html' with comment=comment %}
+            {% endif %}
+        {% endfor %}
+    </div>
+</div> 

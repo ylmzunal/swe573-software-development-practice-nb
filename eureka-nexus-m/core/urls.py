@@ -18,6 +18,10 @@ urlpatterns = [
     path('post/<int:pk>/delete/', views.delete_post, name='delete_post'),
     path('post/<int:pk>/status/', views.update_post_status, name='update_post_status'),
     path('wikidata-search/', views.wikidata_search, name='wikidata_search'),
+    path('post/<int:post_id>/comment/', views.add_comment, name='add_comment'),
+    path('post/<int:post_id>/comment/<int:comment_id>/reply/', views.add_reply, name='add_reply'),
+    path('comment/<int:comment_id>/delete/', views.delete_comment, name='delete_comment'),
+    path('comment/<int:comment_id>/edit-tag/', views.edit_comment_tag, name='edit_comment_tag'),
 ]
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

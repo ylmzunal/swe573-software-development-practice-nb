@@ -73,6 +73,9 @@
                             </div>
                         </div>
                     {% endif %}
+
+                    <!-- Comments Section -->
+                    {% include 'core/partials/comments.html' with post=post comment_form=comment_form %}
                 </div>
             </div>
         </div>
@@ -282,10 +285,46 @@
     .document-link:hover {
         color: #0d6efd;
     }
+
+    /* Comment styles */
+    .comment-content {
+        background-color: #f8f9fa;
+    }
+    
+    .reply-form {
+        background-color: #fff;
+        padding: 1rem;
+        border-radius: 0.25rem;
+    }
+    
+    .comment-actions {
+        border-top: 1px solid #dee2e6;
+        padding-top: 0.5rem;
+    }
+    
+    .replies {
+        border-left: 2px solid #dee2e6;
+    }
+    
+    .comment .badge {
+        font-size: 0.8em;
+    }
+    
+    .delete-comment {
+        padding: 0.25rem 0.5rem;
+    }
+    
+    .comment-header {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
 </style>
 {% endblock %}
 
 {% block extra_js %}
 <script src="{% static 'core/js/semantic_tags.js' %}"></script>
+<script src="{% static 'core/js/comments.js' %}"></script>
 {% endblock %}
 
