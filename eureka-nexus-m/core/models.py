@@ -304,3 +304,35 @@ class PostMultimedia(models.Model):
 
     def is_document(self):
         return self.get_file_extension() in ['pdf', 'doc', 'docx', 'txt']
+
+class Comment(models.Model):
+    TAG_CHOICES = [
+        ('question', 'Question'),
+        ('hint', 'Hint'),
+        ('answer', 'Answer'),
+    ]
+
+    post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name='comments')
+    author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True)
+    content = models.TextField()
+    tag = models.CharField(max_length=10, choices=TAG_CHOICES, blank=True, null=True)
+    parent = models.ForeignKey('self', on_delete=models.CASCADE, null=True, blank=True, related_name='replies')
+    created_at = models.DateTimeField(auto_now_add=True)
+    is_deleted = models.BooleanField(default=False)
+
+    class Meta:
+        ordering = ['created_at']
+
+    def __str__(self):
+        return f'Comment by {self.author} on {self.post.title}'
+
+    def get_replies(self):
+        return Comment.objects.filter(parent=self).order_by('created_at')
+
+    def can_tag_as_answer(self, user):
+        """Check if user can tag this comment as an answer"""
+        return user == self.post.author
+
+    def can_edit_tag(self, user):
+        """Check if user can edit the tag of this comment"""
+        return user == self.post.author and not self.is_deleted
