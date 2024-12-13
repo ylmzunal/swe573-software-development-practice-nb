@@ -290,13 +290,30 @@ def update_post_status(request, pk):
     
     if request.method == 'POST':
         new_status = request.POST.get('status')
+        
+        # Check if trying to mark as solved
+        if new_status == 'solved':
+            if not post.has_answer_comment():
+                return JsonResponse({
+                    'status': 'error',
+                    'message': 'Cannot mark as solved: No comment has been marked as an answer yet.'
+                })
+        
         if new_status in dict(Post.STATUS_CHOICES):
             post.status = new_status
             post.save()
-            messages.success(request, 'Post status updated successfully!')
+            return JsonResponse({
+                'status': 'success',
+                'new_status': new_status,
+                'new_status_display': post.get_status_display()
+            })
         else:
-            messages.error(request, 'Invalid status.')
-    return redirect('post_detail', pk=pk)
+            return JsonResponse({
+                'status': 'error',
+                'message': 'Invalid status.'
+            })
+            
+    return JsonResponse({'status': 'error', 'message': 'Invalid request method.'})
 
 
 
@@ -376,9 +393,23 @@ def add_reply(request, post_id, comment_id):
 def delete_comment(request, comment_id):
     comment = get_object_or_404(Comment, pk=comment_id)
     if request.user == comment.author and request.method == 'POST':
+        had_answer = comment.tag == 'answer'
+        old_status = comment.post.status
         comment.is_deleted = True
-        comment.save()
-        return JsonResponse({'status': 'success'})
+        status_changed = comment.save()
+        
+        response_data = {'status': 'success'}
+        
+        # Only add status change info if the status actually changed from solved to unknown
+        if had_answer and status_changed and old_status == 'solved':
+            response_data.update({
+                'post_status_changed': True,
+                'new_post_status': 'unknown',
+                'new_post_status_display': comment.post.get_status_display(),
+                'message': 'Post status changed to Unknown: Answer comment was deleted'
+            })
+        
+        return JsonResponse(response_data)
     return JsonResponse({'status': 'error'}, status=403)
 
 @login_required
@@ -387,7 +418,7 @@ def edit_comment_tag(request, comment_id):
     
     if request.method == 'POST':
         new_tag = request.POST.get('tag')
-        print(f"Received tag update request: comment_id={comment_id}, new_tag='{new_tag}'")  # Debug log
+        old_tag = comment.tag
         
         # Only post owner can edit tags, and only to mark as answer
         if request.user != comment.post.author:
@@ -404,21 +435,28 @@ def edit_comment_tag(request, comment_id):
         
         try:
             comment.tag = new_tag
-            comment.save()
+            status_changed = comment.save()
             
-            return JsonResponse({
+            response_data = {
                 'status': 'success',
                 'tag': new_tag,
                 'tag_display': comment.get_tag_display() if new_tag else ''
-            })
+            }
+
+            # Only add status change info if the post was previously solved
+            if old_tag == 'answer' and not new_tag and comment.post.status == 'unknown' and status_changed:
+                response_data['post_status_changed'] = True
+                response_data['new_post_status'] = 'unknown'
+                response_data['new_post_status_display'] = comment.post.get_status_display()
+                response_data['message'] = 'Post status changed to Unknown: No answer tags remaining'
+            
+            return JsonResponse(response_data)
+            
         except Exception as e:
-            print(f"Error updating comment tag: {str(e)}")  # Debug log
+            print(f"Error updating comment tag: {str(e)}")
             return JsonResponse({
                 'status': 'error',
                 'message': 'Error saving comment tag'
             }, status=500)
-        
-    return JsonResponse({
-        'status': 'error',
-        'message': 'Invalid request method'
-    }, status=400)
+    
+    return JsonResponse({'status': 'error', 'message': 'Invalid request method'})

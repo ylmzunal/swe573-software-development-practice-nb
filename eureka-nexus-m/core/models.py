@@ -244,6 +244,10 @@ class Post(models.Model):
     def __str__(self):
         return self.title
 
+    def has_answer_comment(self):
+        """Check if the post has at least one comment marked as answer"""
+        return self.comments.filter(tag='answer').exists()
+
 class WikidataTag(models.Model):
     post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name='wikidata_tags')
     wikidata_id = models.CharField(max_length=20)
@@ -336,3 +340,35 @@ class Comment(models.Model):
     def can_edit_tag(self, user):
         """Check if user can edit the tag of this comment"""
         return user == self.post.author and not self.is_deleted
+
+    def save(self, *args, **kwargs):
+        # Check if this is an existing comment being modified
+        if self.pk:
+            old_instance = Comment.objects.get(pk=self.pk)
+            had_answer = old_instance.tag == 'answer'
+        else:
+            had_answer = False
+
+        super().save(*args, **kwargs)
+
+        # Check if answer status changed and update post status if needed
+        if had_answer != (self.tag == 'answer') or self.is_deleted:
+            self.update_post_status()
+
+    def update_post_status(self):
+        """Update post status based on answer comments"""
+        if self.post.status == 'solved' and not self.post.has_answer_comment():
+            # Only return True if the status actually changed
+            old_status = self.post.status
+            self.post.status = 'unknown'
+            self.post.save()
+            return old_status != 'unknown'  # Return True only if status changed
+        return False
+
+    def delete(self, *args, **kwargs):
+        post = self.post
+        had_answer = self.tag == 'answer'
+        super().delete(*args, **kwargs)
+        if had_answer and not post.has_answer_comment():
+            post.status = 'unknown'
+            post.save()

@@ -21,10 +21,26 @@ document.addEventListener('DOMContentLoaded', function() {
                         }
                     });
                     
+                    const data = await response.json();
                     if (response.ok) {
                         const comment = document.querySelector(`#comment-${commentId} .comment-text`);
                         comment.innerHTML = '<em class="text-muted">[Deleted]</em>';
                         this.remove();
+
+                        // Handle post status change if needed
+                        if (data.post_status_changed) {
+                            const statusBadge = document.querySelector('.status-badge');
+                            if (statusBadge) {
+                                statusBadge.textContent = data.new_post_status_display;
+                                statusBadge.className = 'badge status-badge bg-warning';
+                            }
+                            // Reset status select if it exists
+                            const statusSelect = document.getElementById('postStatus');
+                            if (statusSelect) {
+                                statusSelect.value = data.new_post_status;
+                            }
+                            alert(data.message);
+                        }
                     }
                 } catch (error) {
                     console.error('Error deleting comment:', error);
@@ -94,6 +110,21 @@ document.addEventListener('DOMContentLoaded', function() {
                             header.appendChild(badge);
                         }
                     }
+
+                    // Handle post status change if needed
+                    if (data.post_status_changed) {
+                        const statusBadge = document.querySelector('.status-badge');
+                        if (statusBadge) {
+                            statusBadge.textContent = data.new_post_status_display;
+                            statusBadge.className = 'badge status-badge bg-warning';
+                        }
+                        // Reset status select if it exists
+                        const statusSelect = document.getElementById('postStatus');
+                        if (statusSelect) {
+                            statusSelect.value = data.new_post_status;
+                        }
+                        alert(data.message);
+                    }
                 } else {
                     console.error('Error response:', data); // Debug log
                     alert(data.message || 'Error updating tag');
@@ -104,4 +135,48 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     });
+
+    // Handle post status update
+    const updateStatusBtn = document.getElementById('updateStatus');
+    if (updateStatusBtn) {
+        updateStatusBtn.addEventListener('click', async function() {
+            const statusSelect = document.getElementById('postStatus');
+            const newStatus = statusSelect.value;
+            const postId = window.location.pathname.split('/')[2]; // Get post ID from URL
+
+            try {
+                const response = await fetch(`/post/${postId}/status/`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': getCookie('csrftoken'),
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: `status=${newStatus}`
+                });
+
+                const data = await response.json();
+                
+                if (response.ok && data.status === 'success') {
+                    // Update the status badge
+                    const statusBadge = document.querySelector('.status-badge');
+                    if (statusBadge) {
+                        statusBadge.textContent = data.new_status_display;
+                        statusBadge.className = `badge status-badge ${
+                            data.new_status === 'solved' ? 'bg-success' : 'bg-warning'
+                        }`;
+                    }
+                } else {
+                    // Show error message
+                    alert(data.message || 'Error updating post status');
+                    // Reset select to previous value
+                    statusSelect.value = statusSelect.querySelector('[selected]').value;
+                }
+            } catch (error) {
+                console.error('Error updating post status:', error);
+                alert('Error updating post status');
+                // Reset select to previous value
+                statusSelect.value = statusSelect.querySelector('[selected]').value;
+            }
+        });
+    }
 }); 
