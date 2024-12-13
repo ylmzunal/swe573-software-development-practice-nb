@@ -41,4 +41,19 @@
 
 .downvote.active i {
     color: #ef4444;
+}
+
+.comment-vote-buttons {
+    margin-top: 10px;
+    display: inline-flex;
+    gap: 5px;
+}
+
+.comment-vote-buttons .vote-btn {
+    padding: 2px 5px;
+    font-size: 0.875rem;
+}
+
+.comment-vote-buttons .vote-btn i {
+    font-size: 0.875rem;
 } 

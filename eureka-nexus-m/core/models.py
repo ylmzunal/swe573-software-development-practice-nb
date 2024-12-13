@@ -390,6 +390,12 @@ class Comment(models.Model):
             post.status = 'unknown'
             post.save()
 
+    def upvote_count(self):
+        return self.votes.filter(vote_type='up').count()
+    
+    def downvote_count(self):
+        return self.votes.filter(vote_type='down').count()
+
 class Vote(models.Model):
     VOTE_CHOICES = [
         ('up', 'Upvote'),
@@ -397,13 +403,28 @@ class Vote(models.Model):
     ]
     
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
-    post = models.ForeignKey('Post', on_delete=models.CASCADE, related_name='votes')
+    post = models.ForeignKey('Post', on_delete=models.CASCADE, related_name='votes', null=True, blank=True)
+    comment = models.ForeignKey('Comment', on_delete=models.CASCADE, related_name='votes', null=True, blank=True)
     vote_type = models.CharField(max_length=4, choices=VOTE_CHOICES)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        unique_together = ['user', 'post']
+        unique_together = [
+            ('user', 'post'),
+            ('user', 'comment')
+        ]
+        constraints = [
+            models.CheckConstraint(
+                check=(
+                    models.Q(post__isnull=False, comment__isnull=True) |
+                    models.Q(post__isnull=True, comment__isnull=False)
+                ),
+                name='vote_only_on_post_or_comment'
+            )
+        ]
 
     def clean(self):
         if self.vote_type not in ['up', 'down']:
             raise ValidationError('Invalid vote type')
+        if bool(self.post) == bool(self.comment):
+            raise ValidationError('Vote must be either on a post or a comment, not both or neither')

@@ -1,6 +1,8 @@
 document.addEventListener('DOMContentLoaded', function() {
+    // Handle both post and comment vote buttons
     document.querySelectorAll('.vote-buttons').forEach(container => {
         const postId = container.dataset.postId;
+        const commentId = container.dataset.commentId;
         const upvoteBtn = container.querySelector('.upvote');
         const downvoteBtn = container.querySelector('.downvote');
 
@@ -14,7 +16,11 @@ document.addEventListener('DOMContentLoaded', function() {
                     const formData = new FormData();
                     formData.append('vote_type', voteType);
 
-                    fetch(`/post/${postId}/vote/`, {
+                    const url = commentId 
+                        ? `/comment/${commentId}/vote/`
+                        : `/post/${postId}/vote/`;
+
+                    fetch(url, {
                         method: 'POST',
                         body: formData,
                         headers: {

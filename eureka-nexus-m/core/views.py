@@ -110,13 +110,23 @@ def post_detail(request, pk):
     post = get_object_or_404(Post, pk=pk)
     comment_form = CommentForm(user=request.user, post=post) if request.user.is_authenticated else None
     user_vote = None
+    comment_votes = {}
+    
     if request.user.is_authenticated:
         user_vote = Vote.objects.filter(user=request.user, post=post).first()
+        comment_votes = {
+            vote.comment_id: vote 
+            for vote in Vote.objects.filter(
+                user=request.user, 
+                comment__in=post.comments.all()
+            )
+        }
     
     return render(request, 'core/post_detail.html', {
         'post': post,
         'comment_form': comment_form,
-        'user_vote': user_vote
+        'user_vote': user_vote,
+        'comment_votes': comment_votes
     })
 
 @login_required
