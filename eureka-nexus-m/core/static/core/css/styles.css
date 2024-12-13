@@ -56,4 +56,98 @@
 
 .comment-vote-buttons .vote-btn i {
     font-size: 0.875rem;
+}
+
+.advanced-search-link {
+    padding: 8px 16px;
+    background-color: #f8f9fa;
+    border-top: 1px solid #dee2e6;
+}
+
+.advanced-search-link a {
+    display: block;
+    text-decoration: none;
+    color: #007bff;
+    font-weight: 500;
+}
+
+.advanced-search-link a:hover {
+    color: #0056b3;
+}
+
+.no-results {
+    padding: 8px 16px;
+    color: #6c757d;
+}
+
+.dropdown-divider {
+    margin: 0.5rem 0;
+    border-top: 1px solid #dee2e6;
+}
+
+/* Add these styles for Wikidata search */
+.wikidata-search-container {
+    position: relative;
+}
+
+.wikidata-results {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    z-index: 1000;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.wikidata-result-item {
+    padding: 8px 12px;
+    cursor: pointer;
+    border-bottom: 1px solid #eee;
+}
+
+.wikidata-result-item:last-child {
+    border-bottom: none;
+}
+
+.wikidata-result-item:hover {
+    background-color: #f8f9fa;
+}
+
+.wikidata-result-item small {
+    color: #6c757d;
+    display: block;
+    margin-top: 2px;
+}
+
+/* Add these styles for advanced search */
+.search-field-container {
+    background-color: #f8f9fa;
+    padding: 15px;
+    border-radius: 8px;
+    border: 1px solid #dee2e6;
+}
+
+.search-input-container {
+    position: relative;
+}
+
+.remove-field {
+    margin-top: 5px;
+}
+
+.operator-select {
+    font-weight: 500;
+}
+
+#addField {
+    margin-top: 10px;
+}
+
+.search-field-container + .search-field-container {
+    margin-top: 15px;
 } 

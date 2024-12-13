@@ -14,6 +14,11 @@ from django.views.generic import DetailView
 import json
 from django.db.models import Q
 from django.contrib.contenttypes.models import ContentType
+from functools import reduce
+from operator import and_, or_
+import logging
+from django.contrib.postgres.search import SearchVector, SearchQuery, SearchRank
+logger = logging.getLogger(__name__)
 
 def get_user_votes(user, posts):
     if not user.is_authenticated:
@@ -502,3 +507,134 @@ def search_posts(request):
         ).values('id', 'title')[:5]  # Limit to 5 results
         return JsonResponse(list(posts), safe=False)
     return JsonResponse([], safe=False)
+
+def advanced_search(request):
+    search_performed = False
+    posts = None
+    user_votes = {}
+    available_attributes = [
+        {'name': 'color', 'display_name': 'Color'},
+        {'name': 'size', 'display_name': 'Size'},
+        {'name': 'weight', 'display_name': 'Weight'},
+        {'name': 'condition', 'display_name': 'Condition'},
+        {'name': 'material', 'display_name': 'Material'},
+        {'name': 'shape', 'display_name': 'Shape'},
+    ]
+
+    if request.GET:
+        logger.debug(f"Search parameters: {request.GET}")
+        search_performed = True
+        
+        # Group search parameters
+        search_fields = []
+        
+        # Process all parameters to group related fields
+        for key, value in request.GET.items():
+            if key.startswith('attribute_'):
+                field_num = key.split('_')[1]
+                if value:  # if attribute is selected
+                    field_data = {
+                        'attribute': value,
+                        'value': request.GET.get(f'value_{field_num}', ''),
+                        'operator': request.GET.get(f'operator_{field_num}', 'AND'),
+                        'match_type': request.GET.get(f'match_{field_num}', 'include')
+                    }
+                    
+                    # If it's a semantic tag, get the tag ID
+                    if value == 'semantic_tag':
+                        field_data['tag_id'] = request.GET.get(f'semantic_tag_id_{field_num}')
+                    
+                    search_fields.append(field_data)
+
+        # Initialize query
+        base_query = Post.objects.all()
+        
+        # Process each search field
+        for field in search_fields:
+            if not field['value']:  # Skip if no search value
+                continue
+
+            attribute = field['attribute']
+            value = field['value']
+            operator = field['operator']
+            match_type = field['match_type']
+            
+            # Build the condition based on match type
+            if attribute == 'semantic_tag':
+                # Use the tag_id for semantic tag searches
+                tag_id = field.get('tag_id')
+                if tag_id:
+                    condition = Q(wikidata_tags__wikidata_id=tag_id)
+                else:
+                    continue  # Skip if no tag_id is provided
+            elif attribute == 'title':
+                if match_type == 'exact':
+                    condition = Q(title__iexact=value)
+                else:  # include
+                    condition = Q(title__icontains=value)
+            elif attribute == 'description':
+                if match_type == 'exact':
+                    condition = Q(description__exact=value)
+                else:  # include
+                    condition = Q(description__icontains=value)
+            elif attribute == 'color':
+                if match_type == 'exact':
+                    condition = Q(colour__exact=value)
+                else:
+                    condition = Q(colour__icontains=value)
+            elif attribute == 'size':
+                if match_type == 'exact':
+                    condition = (
+                        Q(size__exact=value) |
+                        Q(width__exact=value) |
+                        Q(height__exact=value) |
+                        Q(depth__exact=value)
+                    )
+                else:
+                    condition = (
+                        Q(size__icontains=value) |
+                        Q(width__icontains=value) |
+                        Q(height__icontains=value) |
+                        Q(depth__icontains=value)
+                    )
+            else:
+                if match_type == 'exact':
+                    condition = Q(**{f'{attribute}__exact': value})
+                else:
+                    condition = Q(**{f'{attribute}__icontains': value})
+
+            # Apply the condition based on operator
+            if operator == 'NOT':
+                base_query = base_query.exclude(condition)
+            elif operator == 'OR':
+                base_query = base_query | Post.objects.filter(condition)
+            else:  # AND
+                base_query = base_query.filter(condition)
+
+        # Finalize query
+        if search_fields:
+            posts = base_query.distinct().order_by('-created_at')
+            logger.debug(f"Final query: {str(posts.query)}")
+            logger.debug(f"Found {posts.count()} posts")
+            
+            # Get user votes
+            user_votes = get_user_votes(request.user, posts) if request.user.is_authenticated else {}
+
+            # Add pagination
+            paginator = Paginator(posts, 10)
+            page = request.GET.get('page')
+            try:
+                posts = paginator.page(page)
+            except PageNotAnInteger:
+                posts = paginator.page(1)
+            except EmptyPage:
+                posts = paginator.page(paginator.num_pages)
+        else:
+            posts = Post.objects.none()
+
+    return render(request, 'core/advanced_search.html', {
+        'posts': posts,
+        'search_performed': search_performed,
+        'available_attributes': available_attributes,
+        'user_votes': user_votes,
+    })

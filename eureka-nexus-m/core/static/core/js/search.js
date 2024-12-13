@@ -9,6 +9,7 @@ document.addEventListener('DOMContentLoaded', function() {
         searchOverlay.classList.toggle('d-none');
         if (!searchOverlay.classList.contains('d-none')) {
             searchInput.focus();
+            displayResults([], '');
         }
     });
 
@@ -26,7 +27,7 @@ document.addEventListener('DOMContentLoaded', function() {
             if (query.length >= 2) {
                 fetchSearchResults(query);
             } else {
-                searchResults.classList.add('d-none');
+                displayResults([], '');
             }
         }, 300);
     });
@@ -54,21 +55,37 @@ document.addEventListener('DOMContentLoaded', function() {
         searchResults.innerHTML = '';
         searchResults.classList.remove('d-none');
 
-        if (results.length === 0) {
+        if (results.length > 0) {
+            results.forEach(post => {
+                const div = document.createElement('div');
+                div.className = 'search-result-item';
+                const highlightedTitle = highlightMatch(post.title, query);
+                div.innerHTML = highlightedTitle;
+                div.addEventListener('click', () => {
+                    window.location.href = `/post/${post.id}/`;
+                });
+                searchResults.appendChild(div);
+            });
+        } else if (query) {
             searchResults.innerHTML = '<div class="search-result-item">No results found</div>';
-            return;
         }
 
-        results.forEach(post => {
-            const div = document.createElement('div');
-            div.className = 'search-result-item';
-            const highlightedTitle = highlightMatch(post.title, query);
-            div.innerHTML = highlightedTitle;
-            div.addEventListener('click', () => {
-                window.location.href = `/post/${post.id}/`;
-            });
-            searchResults.appendChild(div);
-        });
+        const divider = document.createElement('div');
+        divider.className = 'dropdown-divider';
+        searchResults.appendChild(divider);
+
+        const advancedSearchDiv = document.createElement('div');
+        advancedSearchDiv.className = 'search-result-item advanced-search-link text-center';
+        
+        const queryParam = query ? `?title_1=${encodeURIComponent(query)}&title_operator_1=AND` : '';
+        
+        advancedSearchDiv.innerHTML = `
+            <a href="/advanced-search/${queryParam}" 
+               class="text-primary">
+                <i class="fas fa-search-plus"></i> Advanced Search
+            </a>
+        `;
+        searchResults.appendChild(advancedSearchDiv);
     }
 
     function highlightMatch(text, query) {

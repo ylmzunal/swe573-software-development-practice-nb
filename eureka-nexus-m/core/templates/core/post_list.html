@@ -13,6 +13,14 @@
             {% else %}
                 <p>No posts found matching your search.</p>
             {% endif %}
+            
+            <div class="text-center mb-3">
+                <p class="text-muted">Need more specific results?</p>
+                <a href="{% url 'advanced_search' %}{% if search_query %}?title_1={{ search_query }}&title_operator_1=AND{% endif %}" 
+                   class="btn btn-outline-primary">
+                    <i class="fas fa-search-plus"></i> Try Advanced Search
+                </a>
+            </div>
         </div>
     {% else %}
         <h2>All Posts</h2>
@@ -26,6 +34,13 @@
         {% empty %}
             <div class="col-12">
                 <p>No posts available.</p>
+                <div class="text-center mt-4">
+                    <p class="text-muted">Try our advanced search for better results</p>
+                    <a href="{% url 'advanced_search' %}{% if search_query %}?title_1={{ search_query }}&title_operator_1=AND{% endif %}" 
+                       class="btn btn-outline-primary">
+                        <i class="fas fa-search-plus"></i> Advanced Search
+                    </a>
+                </div>
             </div>
         {% endfor %}
     </div>
@@ -64,6 +79,17 @@
             {% endif %}
         </ul>
     </nav>
+    {% endif %}
+
+    {% if posts %}
+        <div class="text-center mt-4 mb-4">
+            <hr>
+            <p class="text-muted">Looking for something specific?</p>
+            <a href="{% url 'advanced_search' %}{% if search_query %}?title_1={{ search_query }}&title_operator_1=AND{% endif %}" 
+               class="btn btn-outline-primary">
+                <i class="fas fa-search-plus"></i> Try Advanced Search
+            </a>
+        </div>
     {% endif %}
 </div>
 {% endblock %}
