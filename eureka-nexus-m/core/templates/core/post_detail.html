@@ -2,6 +2,7 @@
 {% load static %}
 {% load post_extras %}
 {% load semantic_tags %}
+{% load custom_filters %}
 
 {% block title %}{{ post.title }}{% endblock %}
 
@@ -200,6 +201,8 @@
         </div>
     {% endif %}
 {% endfor %}
+
+{% include 'core/partials/vote_buttons.html' with post=post user_vote=user_vote %}
 {% endblock %}
 
 {% block extra_css %}

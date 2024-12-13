@@ -4,6 +4,7 @@ from django.templatetags.static import static
 from django.contrib.auth.models import AbstractUser
 from django.core.validators import MaxLengthValidator
 from django.conf import settings
+from django.core.exceptions import ValidationError
 
 class Profile(AbstractUser):
     profile_picture = models.ImageField(
@@ -258,6 +259,12 @@ class Post(models.Model):
         """Check if the post has at least one comment marked as answer"""
         return self.comments.filter(tag='answer').exists()
 
+    def upvote_count(self):
+        return self.votes.filter(vote_type='up').count()
+    
+    def downvote_count(self):
+        return self.votes.filter(vote_type='down').count()
+
 class WikidataTag(models.Model):
     post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name='wikidata_tags')
     wikidata_id = models.CharField(max_length=20)
@@ -382,3 +389,21 @@ class Comment(models.Model):
         if had_answer and not post.has_answer_comment():
             post.status = 'unknown'
             post.save()
+
+class Vote(models.Model):
+    VOTE_CHOICES = [
+        ('up', 'Upvote'),
+        ('down', 'Downvote'),
+    ]
+    
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    post = models.ForeignKey('Post', on_delete=models.CASCADE, related_name='votes')
+    vote_type = models.CharField(max_length=4, choices=VOTE_CHOICES)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ['user', 'post']
+
+    def clean(self):
+        if self.vote_type not in ['up', 'down']:
+            raise ValidationError('Invalid vote type')

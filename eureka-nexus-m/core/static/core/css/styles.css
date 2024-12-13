@@ -1,0 +1,44 @@
+/* Add to your existing CSS */
+.vote-buttons {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 10px 0;
+}
+
+.vote-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 5px 10px;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+}
+
+.vote-btn:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+}
+
+.vote-btn.active {
+    background-color: #e2e8f0;
+}
+
+.vote-btn:hover:not(:disabled) {
+    background-color: #f1f5f9;
+}
+
+.vote-btn i {
+    font-size: 1.2em;
+}
+
+.upvote.active i {
+    color: #22c55e;
+}
+
+.downvote.active i {
+    color: #ef4444;
+} 

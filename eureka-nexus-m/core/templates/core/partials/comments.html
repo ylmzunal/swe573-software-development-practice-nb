@@ -4,6 +4,7 @@
     <div class="d-flex align-items-center gap-2 mb-3">
         <h4 class="mb-0">Comments</h4>
         <span class="badge bg-secondary">{{ post.comments.count }}</span>
+        {% include 'core/partials/vote_buttons.html' with post=post user_vote=user_vote %}
     </div>
     
     {% if user.is_authenticated %}

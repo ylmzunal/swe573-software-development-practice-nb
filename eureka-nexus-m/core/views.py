@@ -3,7 +3,7 @@ from django.contrib.auth import login, authenticate, logout
 from django.contrib.auth.forms import AuthenticationForm
 from .forms import ProfileCreationForm, ProfileChangeForm, PostForm, WikidataTagFormSet, CommentForm
 from django.contrib import messages
-from .models import Profile, Post, PostAttribute, PostMultimedia, Comment
+from .models import Profile, Post, PostAttribute, PostMultimedia, Comment, Vote
 from django import forms
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
@@ -14,8 +14,17 @@ from django.views.generic import DetailView
 import json
 
 def home(request):
-    recent_posts = Post.objects.all().order_by('-created_at')[:6]  # Get 6 most recent posts
-    return render(request, 'core/home.html', {'recent_posts': recent_posts})
+    recent_posts = Post.objects.all().order_by('-created_at')[:6]
+    user_votes = {}
+    if request.user.is_authenticated:
+        user_votes = {
+            vote.post_id: vote 
+            for vote in Vote.objects.filter(user=request.user, post__in=recent_posts)
+        }
+    return render(request, 'core/home.html', {
+        'recent_posts': recent_posts,
+        'user_votes': user_votes
+    })
 
 # AUTH
 
@@ -100,10 +109,14 @@ def post_list(request):
 def post_detail(request, pk):
     post = get_object_or_404(Post, pk=pk)
     comment_form = CommentForm(user=request.user, post=post) if request.user.is_authenticated else None
-    print("Semantic tags:", list(post.wikidata_tags.all()))
+    user_vote = None
+    if request.user.is_authenticated:
+        user_vote = Vote.objects.filter(user=request.user, post=post).first()
+    
     return render(request, 'core/post_detail.html', {
         'post': post,
-        'comment_form': comment_form
+        'comment_form': comment_form,
+        'user_vote': user_vote
     })
 
 @login_required
