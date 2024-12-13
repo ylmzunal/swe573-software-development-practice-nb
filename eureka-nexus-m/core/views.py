@@ -12,19 +12,25 @@ import requests
 from .models import WikidataTag
 from django.views.generic import DetailView
 import json
+from django.db.models import Q
+from django.contrib.contenttypes.models import ContentType
+
+def get_user_votes(user, posts):
+    if not user.is_authenticated:
+        return {}
+    votes = Vote.objects.filter(user=user, content_type=ContentType.objects.get_for_model(Post), 
+                              object_id__in=[post.id for post in posts])
+    return {vote.object_id: vote.vote_type for vote in votes}
 
 def home(request):
     recent_posts = Post.objects.all().order_by('-created_at')[:6]
-    user_votes = {}
-    if request.user.is_authenticated:
-        user_votes = {
-            vote.post_id: vote 
-            for vote in Vote.objects.filter(user=request.user, post__in=recent_posts)
-        }
-    return render(request, 'core/home.html', {
+    user_votes = get_user_votes(request.user, recent_posts) if request.user.is_authenticated else {}
+    
+    context = {
         'recent_posts': recent_posts,
-        'user_votes': user_votes
-    })
+        'user_votes': user_votes,
+    }
+    return render(request, 'core/home.html', context)
 
 # AUTH
 
@@ -91,20 +97,41 @@ def edit_profile(request):
 
 
 def post_list(request):
-    post_list = Post.objects.all().order_by('-created_at')
+    post_list = Post.objects.all().prefetch_related('comments')
+    
+    # Handle search query
+    search_query = request.GET.get('search', '')
+    if search_query:
+        post_list = post_list.filter(
+            Q(title__icontains=search_query) |
+            Q(description__icontains=search_query)
+        )
+    
+    post_list = post_list.order_by('-created_at')
     paginator = Paginator(post_list, 10)  # Show 10 posts per page
 
     page = request.GET.get('page')
     try:
         posts = paginator.page(page)
     except PageNotAnInteger:
-        # If page is not an integer, deliver first page.
         posts = paginator.page(1)
     except EmptyPage:
-        # If page is out of range (e.g. 9999), deliver last page of results.
         posts = paginator.page(paginator.num_pages)
 
-    return render(request, 'core/post_list.html', {'posts': posts})
+    # Get user votes for the posts
+    user_votes = {}
+    if request.user.is_authenticated:
+        user_votes = {
+            vote.post_id: vote 
+            for vote in Vote.objects.filter(user=request.user, post__in=posts)
+        }
+
+    context = {
+        'posts': posts,
+        'search_query': search_query,
+        'user_votes': user_votes,
+    }
+    return render(request, 'core/post_list.html', context)
 
 def post_detail(request, pk):
     post = get_object_or_404(Post, pk=pk)
@@ -341,23 +368,6 @@ def update_post_status(request, pk):
 
 
 
-def post_list(request):
-    post_list = Post.objects.all().order_by('-created_at')
-    paginator = Paginator(post_list, 10)  # Show 10 posts per page
-
-    page = request.GET.get('page')
-    try:
-        posts = paginator.page(page)
-    except PageNotAnInteger:
-        # If page is not an integer, deliver first page.
-        posts = paginator.page(1)
-    except EmptyPage:
-        # If page is out of range (e.g. 9999), deliver last page of results.
-        posts = paginator.page(paginator.num_pages)
-
-    return render(request, 'core/post_list.html', {'posts': posts})
-
-
 def wikidata_search(request):
     query = request.GET.get('q', '')
     if query:
@@ -483,3 +493,12 @@ def edit_comment_tag(request, comment_id):
             }, status=500)
     
     return JsonResponse({'status': 'error', 'message': 'Invalid request method'})
+
+def search_posts(request):
+    query = request.GET.get('q', '')
+    if len(query) >= 2:
+        posts = Post.objects.filter(
+            title__icontains=query
+        ).values('id', 'title')[:5]  # Limit to 5 results
+        return JsonResponse(list(posts), safe=False)
+    return JsonResponse([], safe=False)

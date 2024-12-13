@@ -1,87 +1,69 @@
 {% extends 'core/base.html' %}
 {% load static %}
-
-{% block title %}Posts{% endblock %}
+{% load highlight_filter %}
+{% load custom_filters %}
 
 {% block content %}
-<div class="container mt-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2>Posts</h2>
-        {% if user.is_authenticated %}
-            <a href="{% url 'create_post' %}" class="btn btn-primary">Create New Post</a>
-        {% endif %}
-    </div>
+<div class="container">
+    {% if search_query %}
+        <div class="mb-4">
+            <h2>Search Results for "{{ search_query }}"</h2>
+            {% if posts %}
+                <p>Found {{ posts.paginator.count }} result{{ posts.paginator.count|pluralize }}</p>
+            {% else %}
+                <p>No posts found matching your search.</p>
+            {% endif %}
+        </div>
+    {% else %}
+        <h2>All Posts</h2>
+    {% endif %}
 
     <div class="row">
         {% for post in posts %}
             <div class="col-md-6 col-lg-4 mb-4">
-                <div class="card h-100">
-                    {% if post.image %}
-                        <img src="{{ post.image.url }}" class="card-img-top" alt="{{ post.title }}" style="height: 200px; object-fit: cover;">
-                    {% endif %}
-                    <div class="card-body">
-                        <h5 class="card-title">{{ post.title }}</h5>
-                        <p class="card-text">{{ post.description|truncatechars:100 }}</p>
-                        <div class="d-flex justify-content-between align-items-center">
-                            <small class="text-muted">
-                                {% if post.author %}
-                                    By {{ post.author.username }}
-                                {% else %}
-                                    Anonymous
-                                {% endif %}
-                            </small>
-                            <span class="badge {% if post.status == 'solved' %}bg-success{% else %}bg-warning{% endif %}">
-                                {{ post.status|title }}
-                            </span>
-                        </div>
-                    </div>
-                    <div class="card-footer">
-                        <small class="text-muted">Posted {{ post.created_at|timesince }} ago</small>
-                        <a href="{% url 'post_detail' post.pk %}" class="btn btn-sm btn-outline-primary float-end">View Details</a>
-                    </div>
-                </div>
+                {% include 'core/partials/post_card.html' with post=post %}
             </div>
         {% empty %}
             <div class="col-12">
-                <p class="text-center">No posts available.</p>
+                <p>No posts available.</p>
             </div>
         {% endfor %}
     </div>
 
     {% if posts.paginator.num_pages > 1 %}
-        <nav aria-label="Page navigation" class="mt-4">
-            <ul class="pagination justify-content-center">
-                {% if posts.has_previous %}
-                    <li class="page-item">
-                        <a class="page-link" href="?page=1">&laquo; First</a>
+    <nav aria-label="Page navigation" class="mt-4">
+        <ul class="pagination justify-content-center">
+            {% if posts.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?{% if search_query %}search={{ search_query }}&{% endif %}page=1">&laquo; First</a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?{% if search_query %}search={{ search_query }}&{% endif %}page={{ posts.previous_page_number }}">Previous</a>
+                </li>
+            {% endif %}
+
+            {% for num in posts.paginator.page_range %}
+                {% if num == posts.number %}
+                    <li class="page-item active">
+                        <span class="page-link">{{ num }}</span>
                     </li>
+                {% elif num > posts.number|add:'-3' and num < posts.number|add:'3' %}
                     <li class="page-item">
-                        <a class="page-link" href="?page={{ posts.previous_page_number }}">Previous</a>
+                        <a class="page-link" href="?{% if search_query %}search={{ search_query }}&{% endif %}page={{ num }}">{{ num }}</a>
                     </li>
                 {% endif %}
+            {% endfor %}
 
-                {% for num in posts.paginator.page_range %}
-                    {% if num == posts.number %}
-                        <li class="page-item active">
-                            <span class="page-link">{{ num }}</span>
-                        </li>
-                    {% elif num > posts.number|add:'-3' and num < posts.number|add:'3' %}
-                        <li class="page-item">
-                            <a class="page-link" href="?page={{ num }}">{{ num }}</a>
-                        </li>
-                    {% endif %}
-                {% endfor %}
-
-                {% if posts.has_next %}
-                    <li class="page-item">
-                        <a class="page-link" href="?page={{ posts.next_page_number }}">Next</a>
-                    </li>
-                    <li class="page-item">
-                        <a class="page-link" href="?page={{ posts.paginator.num_pages }}">Last &raquo;</a>
-                    </li>
-                {% endif %}
-            </ul>
-        </nav>
+            {% if posts.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?{% if search_query %}search={{ search_query }}&{% endif %}page={{ posts.next_page_number }}">Next</a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?{% if search_query %}search={{ search_query }}&{% endif %}page={{ posts.paginator.num_pages }}">Last &raquo;</a>
+                </li>
+            {% endif %}
+        </ul>
+    </nav>
     {% endif %}
 </div>
 {% endblock %}

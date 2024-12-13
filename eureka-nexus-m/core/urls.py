@@ -25,6 +25,7 @@ urlpatterns = [
     path('comment/<int:comment_id>/edit-tag/', views.edit_comment_tag, name='edit_comment_tag'),
     path('post/<int:post_id>/vote/', views_voting.vote, name='post_vote'),
     path('comment/<int:comment_id>/vote/', views_voting.vote_comment, name='comment_vote'),
+    path('search/', views.search_posts, name='search_posts'),
 ]
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
