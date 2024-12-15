@@ -3,7 +3,7 @@ from django.contrib.auth import login, authenticate, logout
 from django.contrib.auth.forms import AuthenticationForm
 from .forms import ProfileCreationForm, ProfileChangeForm, PostForm, WikidataTagFormSet, CommentForm
 from django.contrib import messages
-from .models import Profile, Post, PostAttribute, PostMultimedia, Comment, Vote
+from .models import Profile, Post, PostAttribute, PostMultimedia, Comment, Vote, PostFollower
 from django import forms
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
@@ -88,8 +88,13 @@ def profile_view(request):
         author=request.user
     ).select_related('author').prefetch_related('comments').distinct().order_by('-comments__created_at')
     
-    # Get user's votes for all displayed posts
-    all_posts = list(user_posts) + list(voted_posts) + list(commented_posts)
+    # Get posts the user is following
+    followed_posts = Post.objects.filter(
+        followers__user=request.user
+    ).select_related('author').prefetch_related('comments').order_by('-followers__followed_at')
+    
+    # Update user_votes to include followed posts
+    all_posts = list(user_posts) + list(voted_posts) + list(commented_posts) + list(followed_posts)
     user_votes = {
         vote.post_id: vote 
         for vote in Vote.objects.filter(
@@ -103,6 +108,7 @@ def profile_view(request):
         "user_posts": user_posts,
         "voted_posts": voted_posts,
         "commented_posts": commented_posts,
+        "followed_posts": followed_posts,
         "user_votes": user_votes,
     })
 
@@ -680,3 +686,34 @@ def advanced_search(request):
         'available_attributes': available_attributes,
         'user_votes': user_votes,
     })
+
+@login_required
+def toggle_follow_post(request, post_id):
+    if request.method == 'POST':
+        post = get_object_or_404(Post, pk=post_id)
+        try:
+            # Try to find existing follow relationship
+            follow = PostFollower.objects.filter(user=request.user, post=post)
+            if follow.exists():
+                # Unfollow
+                follow.delete()
+                is_following = False
+            else:
+                # Follow
+                PostFollower.objects.create(user=request.user, post=post)
+                is_following = True
+            
+            return JsonResponse({
+                'status': 'success',
+                'is_following': is_following
+            })
+        except Exception as e:
+            return JsonResponse({
+                'status': 'error',
+                'message': str(e)
+            }, status=500)
+    
+    return JsonResponse({
+        'status': 'error',
+        'message': 'Invalid request method'
+    }, status=400)

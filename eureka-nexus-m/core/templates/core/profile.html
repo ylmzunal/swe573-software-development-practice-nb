@@ -69,6 +69,16 @@
                 </div>
             </div>
         </div>
+        <div class="col-md-3">
+            <div class="card h-100">
+                <div class="card-body text-center">
+                    <i class="fas fa-bookmark fa-2x mb-2 text-warning"></i>
+                    <h5 class="card-title">Following</h5>
+                    <p class="h3 mb-2">{{ followed_posts.count }}</p>
+                    <a href="#your-following" class="btn btn-outline-warning btn-sm">View Following</a>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- Your Posts Section -->
@@ -127,6 +137,26 @@
                 </div>
             {% else %}
                 <p class="text-muted">You haven't commented on any posts yet.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Add this after the Your Interactions Section -->
+    <div id="your-following" class="card mb-4">
+        <div class="card-header">
+            <h3 class="mb-0">Posts You're Following</h3>
+        </div>
+        <div class="card-body">
+            {% if followed_posts %}
+                <div class="row">
+                    {% for post in followed_posts %}
+                        <div class="col-md-6 mb-3">
+                            {% include 'core/partials/post_card.html' with post=post user_votes=user_votes %}
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p class="text-muted">You're not following any posts yet.</p>
             {% endif %}
         </div>
     </div>
