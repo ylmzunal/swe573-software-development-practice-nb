@@ -170,6 +170,25 @@ def create_post(request):
             post.author = request.user if not request.POST.get('anonymous') else None
             post.save()
             
+            # Handle location data
+            location_data = request.POST.get('location')
+            if location_data:
+                try:
+                    location_json = json.loads(location_data)
+                    PostAttribute.objects.create(
+                        post=post,
+                        name='location',
+                        value=json.dumps({
+                            'display_name': location_json.get('display_name'),
+                            'latitude': location_json.get('lat'),
+                            'longitude': location_json.get('lon'),
+                            'type': location_json.get('type')
+                        })
+                    )
+                except json.JSONDecodeError:
+                    # Handle invalid JSON gracefully
+                    pass
+            
             # Handle multimedia files
             multimedia_files = request.FILES.getlist('multimedia_files')
             print(f"Number of multimedia files: {len(multimedia_files)}")
@@ -533,6 +552,7 @@ def advanced_search(request):
         {'name': 'shape', 'display_name': 'Shape', 'choices': Post.SHAPE_CHOICES},
         {'name': 'condition', 'display_name': 'Condition', 'choices': Post.CONDITION_CHOICES},
         {'name': 'semantic_tag', 'display_name': 'Semantic Tag'},
+        {'name': 'location', 'display_name': 'Location'},
         # Add attribute fields that are stored in PostAttribute
         {'name': 'size', 'display_name': 'Size'},
         {'name': 'weight', 'display_name': 'Weight'},

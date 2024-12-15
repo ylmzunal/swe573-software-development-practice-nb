@@ -200,6 +200,20 @@
                             </div>
                         {% endif %}
                     {% endfor %}
+
+                    {% if post.location %}
+                        <div class="attribute-group border-bottom p-3">
+                            <h6 class="attribute-group-title mb-2">Location</h6>
+                            <div class="attribute-value">
+                                {{ post.location }}
+                                <a href="https://www.openstreetmap.org/search?query={{ post.location|urlencode }}" 
+                                   target="_blank" 
+                                   class="ms-2 text-muted">
+                                    <i class="fas fa-map-marker-alt"></i>
+                                </a>
+                            </div>
+                        </div>
+                    {% endif %}
                 </div>
             </div>
 

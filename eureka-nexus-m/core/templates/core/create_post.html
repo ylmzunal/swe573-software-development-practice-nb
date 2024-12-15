@@ -80,6 +80,7 @@
                     <option value="hardness">Hardness</option>
                     <option value="elasticity">Elasticity</option>
                     <option value="transparency">Transparency</option>
+                    <option value="location">Location</option>
                 </select>
                                         </div>
             
@@ -224,6 +225,36 @@
     .multimedia-type-icon {
         font-size: 2rem;
         text-align: center;
+        color: #6c757d;
+    }
+    
+    .location-results {
+        position: absolute;
+        background: white;
+        border: 1px solid #ddd;
+        max-height: 200px;
+        overflow-y: auto;
+        width: 100%;
+        z-index: 1000;
+        display: none;
+    }
+    
+    .location-result-item {
+        padding: 8px 12px;
+        cursor: pointer;
+        border-bottom: 1px solid #eee;
+    }
+    
+    .location-result-item:hover {
+        background-color: #f8f9fa;
+    }
+    
+    .location-result-item .title {
+        font-weight: 500;
+    }
+    
+    .location-result-item .description {
+        font-size: 0.875rem;
         color: #6c757d;
     }
 </style>
@@ -464,6 +495,11 @@ const attributeConfig = {
         ],
         customField: true,
         maxLength: 100
+    },
+    location: {
+        label: 'Location',
+        type: 'location',
+        maxLength: 300
     }
 };
 </script>

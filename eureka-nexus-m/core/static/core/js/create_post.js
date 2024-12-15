@@ -78,6 +78,37 @@ document.addEventListener('DOMContentLoaded', function() {
             } else if (attributeId === 'size') {
                 inputSection.appendChild(createSizeInputs(config, instanceId));
             }
+        } else if (config.type === 'location') {
+            const locationContainer = document.createElement('div');
+            locationContainer.className = 'input-group';
+            
+            const locationInput = document.createElement('input');
+            locationInput.type = 'text';
+            locationInput.className = 'form-control';
+            locationInput.name = `${attributeId}[${instanceId}]`;
+            locationInput.maxLength = config.maxLength;
+            locationInput.placeholder = 'Enter location...';
+            locationInput.autocomplete = 'off';
+            
+            const locationButton = document.createElement('button');
+            locationButton.type = 'button';
+            locationButton.className = 'btn btn-outline-secondary';
+            locationButton.innerHTML = '<i class="fas fa-map-marker-alt"></i> Use My Location';
+            
+            const resultsDiv = document.createElement('div');
+            resultsDiv.className = 'location-results position-absolute w-100 bg-white border rounded shadow-sm';
+            resultsDiv.style.display = 'none';
+            resultsDiv.style.zIndex = '1000';
+            resultsDiv.style.maxHeight = '300px';
+            resultsDiv.style.overflowY = 'auto';
+            
+            // Initialize location search functionality
+            initializeLocationSearch(locationInput, resultsDiv, locationButton);
+            
+            locationContainer.appendChild(locationInput);
+            locationContainer.appendChild(locationButton);
+            locationContainer.appendChild(resultsDiv);
+            inputSection.appendChild(locationContainer);
         } else {
             if (config.choices) {
                 const select = document.createElement('select');
@@ -250,5 +281,103 @@ document.addEventListener('DOMContentLoaded', function() {
         wrapper.appendChild(exactSection);
 
         return wrapper;
+    }
+
+    function initializeLocationSearch(input, resultsDiv, locationButton) {
+        let debounceTimer;
+
+        input.addEventListener('input', function() {
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(() => {
+                const query = this.value.trim();
+                if (query.length >= 2) {
+                    searchLocations(query, resultsDiv, input);
+                } else {
+                    resultsDiv.style.display = 'none';
+                }
+            }, 300);
+        });
+
+        // Close results when clicking outside
+        document.addEventListener('click', function(event) {
+            if (!input.contains(event.target) && !resultsDiv.contains(event.target)) {
+                resultsDiv.style.display = 'none';
+            }
+        });
+
+        // Handle "Use My Location" button
+        locationButton.addEventListener('click', function() {
+            if (navigator.geolocation) {
+                locationButton.disabled = true;
+                locationButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Getting location...';
+                
+                navigator.geolocation.getCurrentPosition(
+                    async function(position) {
+                        try {
+                            const response = await fetch(
+                                `https://nominatim.openstreetmap.org/reverse?lat=${position.coords.latitude}&lon=${position.coords.longitude}&format=json`
+                            );
+                            const data = await response.json();
+                            input.value = data.display_name;
+                        } catch (error) {
+                            console.error('Error getting location:', error);
+                            alert('Failed to get location. Please enter manually.');
+                        } finally {
+                            locationButton.disabled = false;
+                            locationButton.innerHTML = '<i class="fas fa-map-marker-alt"></i> Use My Location';
+                        }
+                    },
+                    function(error) {
+                        console.error('Geolocation error:', error);
+                        alert('Unable to get location. Please enter manually.');
+                        locationButton.disabled = false;
+                        locationButton.innerHTML = '<i class="fas fa-map-marker-alt"></i> Use My Location';
+                    }
+                );
+            } else {
+                alert('Geolocation is not supported by your browser');
+            }
+        });
+    }
+
+    function searchLocations(query, resultsDiv, input) {
+        fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}`)
+            .then(response => response.json())
+            .then(data => {
+                displayLocationResults(data, resultsDiv, input);
+            })
+            .catch(error => {
+                console.error('Error fetching locations:', error);
+                resultsDiv.innerHTML = '<div class="p-2 text-danger">Error fetching locations</div>';
+                resultsDiv.style.display = 'block';
+            });
+    }
+
+    function displayLocationResults(results, resultsDiv, input) {
+        resultsDiv.innerHTML = '';
+        
+        if (results.length === 0) {
+            resultsDiv.innerHTML = '<div class="p-2">No locations found</div>';
+            resultsDiv.style.display = 'block';
+            return;
+        }
+
+        results.forEach(result => {
+            const div = document.createElement('div');
+            div.className = 'location-result-item p-2';
+            div.innerHTML = `
+                <strong>${result.display_name}</strong>
+                ${result.type ? `<br><small>${result.type}</small>` : ''}
+            `;
+            
+            div.addEventListener('click', () => {
+                input.value = result.display_name;
+                resultsDiv.style.display = 'none';
+            });
+            
+            resultsDiv.appendChild(div);
+        });
+        
+        resultsDiv.style.display = 'block';
     }
 }); 

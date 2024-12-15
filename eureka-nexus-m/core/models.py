@@ -199,6 +199,11 @@ class Post(models.Model):
         ('mi', 'Mile'),
     ]
 
+    LOCATION_CHOICES = [
+        ('manual', 'Manual Input'),
+        ('current', 'Current Location'),
+    ]
+
     author = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.CASCADE)
     title = models.CharField(max_length=300)
     description = models.TextField(max_length=1000)
@@ -262,6 +267,7 @@ class Post(models.Model):
     height = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
     depth = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
     size_unit = models.CharField(max_length=5, choices=SIZE_UNIT_CHOICES, blank=True, null=True)
+    location = models.CharField(max_length=300, blank=True, null=True)
 
     def __str__(self):
         return self.title

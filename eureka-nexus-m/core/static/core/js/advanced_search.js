@@ -29,8 +29,17 @@ document.addEventListener('DOMContentLoaded', function() {
     // Function to initialize attribute select behavior
     function initializeAttributeSelect(selectElement, searchInput) {
         selectElement.addEventListener('change', function() {
+            const resultsContainer = searchInput.parentElement.querySelector('.wikidata-results');
+            const locationResultsContainer = searchInput.parentElement.querySelector('.location-search-results');
+
+            // Reset and hide all result containers
+            resultsContainer.classList.add('d-none');
+            locationResultsContainer.classList.add('d-none');
+
             if (this.value === 'semantic_tag') {
                 initializeWikidataSearch(searchInput);
+            } else if (this.value === 'location') {
+                initializeLocationSearch(searchInput);
             }
         });
     }
@@ -176,4 +185,97 @@ document.addEventListener('DOMContentLoaded', function() {
             container.appendChild(div);
         });
     }
+
+    function initializeLocationSearch(input) {
+        const resultsContainer = input.parentElement.querySelector('.location-search-results');
+        let debounceTimer;
+
+        input.addEventListener('input', function() {
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(() => {
+                const query = this.value.trim();
+                if (query.length >= 2) {
+                    // Use OpenStreetMap Nominatim API for location search
+                    fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}`)
+                        .then(response => response.json())
+                        .then(data => {
+                            displayLocationResults(data, resultsContainer, input);
+                        })
+                        .catch(error => console.error('Error fetching locations:', error));
+                } else {
+                    resultsContainer.classList.add('d-none');
+                }
+            }, 300);
+        });
+
+        // Close results when clicking outside
+        document.addEventListener('click', function(event) {
+            if (!input.contains(event.target) && !resultsContainer.contains(event.target)) {
+                resultsContainer.classList.add('d-none');
+            }
+        });
+    }
+
+    function displayLocationResults(results, container, input) {
+        container.innerHTML = '';
+        container.classList.remove('d-none');
+
+        if (results.length === 0) {
+            container.innerHTML = '<div class="p-2">No locations found</div>';
+            return;
+        }
+
+        results.forEach(result => {
+            const div = document.createElement('div');
+            div.className = 'location-result-item p-2';
+            div.innerHTML = `
+                <strong>${result.display_name}</strong>
+            `;
+            div.addEventListener('click', () => {
+                input.value = result.display_name;
+                container.classList.add('d-none');
+            });
+            container.appendChild(div);
+        });
+    }
+
+    // Add styles for location search results
+    const style = document.createElement('style');
+    style.textContent = `
+        .location-search-results {
+            position: absolute;
+            background: white;
+            border: 1px solid #ddd;
+            max-height: 200px;
+            overflow-y: auto;
+            width: 100%;
+            z-index: 1000;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .location-result-item {
+            cursor: pointer;
+            border-bottom: 1px solid #eee;
+        }
+        .location-result-item:hover {
+            background-color: #f5f5f5;
+        }
+    `;
+    document.head.appendChild(style);
+
+    // Initialize the first search field
+    const firstField = document.querySelector('.search-field-container');
+    if (firstField) {
+        const attributeSelect = firstField.querySelector('.attribute-select');
+        const searchInput = firstField.querySelector('.search-term');
+        initializeAttributeSelect(attributeSelect, searchInput);
+    }
+
+    // Handle adding new search fields
+    document.getElementById('addField')?.addEventListener('click', function() {
+        // ... existing add field code ...
+        const newField = document.querySelector('.search-field-container:last-child');
+        const attributeSelect = newField.querySelector('.attribute-select');
+        const searchInput = newField.querySelector('.search-term');
+        initializeAttributeSelect(attributeSelect, searchInput);
+    });
 }); 
