@@ -204,7 +204,13 @@ class Post(models.Model):
         ('current', 'Current Location'),
     ]
 
-    author = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.CASCADE)
+    author = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='posts'
+    )
     title = models.CharField(max_length=300)
     description = models.TextField(max_length=1000)
     image = models.ImageField(upload_to=get_unique_post_path, blank=True, null=True)

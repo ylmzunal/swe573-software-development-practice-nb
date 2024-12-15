@@ -741,3 +741,33 @@ def public_profile_view(request, username):
     }
     
     return render(request, 'core/public_profile.html', context)
+
+@login_required
+def delete_account(request):
+    if request.method == 'POST':
+        password = request.POST.get('password')
+        user = authenticate(username=request.user.username, password=password)
+        
+        if user is not None:
+            try:
+                # Get all user's posts
+                posts = Post.objects.filter(author=user)
+                
+                # Convert posts to anonymous
+                for post in posts:
+                    post.author = None
+                    post.save()
+                
+                # Delete the user account
+                user.delete()
+                
+                messages.success(request, 'Your account has been successfully deleted.')
+                return redirect('home')
+            except Exception as e:
+                messages.error(request, f'An error occurred while deleting your account: {str(e)}')
+                return redirect('profile')
+        else:
+            messages.error(request, 'Invalid password. Please try again.')
+            return redirect('profile')
+    
+    return redirect('profile')
