@@ -30,6 +30,21 @@
         <img src="{{ post.image.url }}" class="card-img-top" alt="{{ post.title }}" style="height: 200px; object-fit: cover;">
     {% endif %}
     <div class="card-body">
+        <div class="author-info mb-2">
+            {% if post.author %}
+                <a href="{% url 'public_profile' post.author.username %}" class="text-decoration-none">
+                    {% if post.author.profile.avatar %}
+                        <img src="{{ post.author.profile.avatar.url }}" 
+                             class="rounded-circle me-2" 
+                             alt="{{ post.author.username }}"
+                             style="width: 30px; height: 30px; object-fit: cover;">
+                    {% endif %}
+                    <span class="text-muted">@{{ post.author.username }}</span>
+                </a>
+            {% else %}
+                <span class="text-muted">Anonymous</span>
+            {% endif %}
+        </div>
         <h5 class="card-title">{{ post.title }}</h5>
         <p class="card-text">{{ post.description|truncatechars:100 }}</p>
     </div>

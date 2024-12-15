@@ -16,6 +16,7 @@ urlpatterns = [
     path('posts/', views.post_list, name='post_list'),
     path('post/create/', views.create_post, name='create_post'),
     path('post/<int:pk>/', views.post_detail, name='post_detail'),
+    path('post/<int:pk>/edit/', views.edit_post, name='edit_post'),
     path('post/<int:pk>/delete/', views.delete_post, name='delete_post'),
     path('post/<int:pk>/status/', views.update_post_status, name='update_post_status'),
     path('wikidata-search/', views.wikidata_search, name='wikidata_search'),
@@ -28,6 +29,7 @@ urlpatterns = [
     path('search/', views.search_posts, name='search_posts'),
     path('advanced-search/', views.advanced_search, name='advanced_search'),
     path('post/<int:post_id>/follow/', views.toggle_follow_post, name='toggle_follow_post'),
+    path('profile/<str:username>/', views.public_profile_view, name='public_profile'),
 ]
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

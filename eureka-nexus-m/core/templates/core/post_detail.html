@@ -68,12 +68,6 @@
                                     <span class="follow-text">{% if post|is_following:user %}Unfollow{% else %}Follow{% endif %}</span>
                                 </button>
                             {% endif %}
-                            {% if user == post.author %}
-                                <div class="btn-group" role="group">
-                                    <a href="{% url 'edit_post' post.pk %}" class="btn btn-outline-primary">Edit</a>
-                                    <a href="{% url 'delete_post' post.pk %}" class="btn btn-outline-danger">Delete</a>
-                                </div>
-                            {% endif %}
                         </div>
                     </div>
                     

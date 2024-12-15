@@ -17,9 +17,10 @@ from django.contrib.contenttypes.models import ContentType
 from functools import reduce
 from operator import and_, or_
 import logging
-from django.contrib.postgres.search import SearchVector, SearchQuery, SearchRank
-logger = logging.getLogger(__name__)
+from django.contrib.auth import get_user_model
+from .models import Post, Comment
 
+logger = logging.getLogger(__name__)
 
 
 def home(request):
@@ -389,7 +390,11 @@ def edit_post(request, pk):
     else:
         form = PostForm(instance=post)
         formset = WikidataTagFormSet(instance=post)
-    return render(request, 'core/edit_post.html', {'form': form, 'formset': formset, 'post': post})
+    return render(request, 'core/edit_post.html', {
+        'form': form,
+        'formset': formset,
+        'post': post
+    })
 
 @login_required
 def delete_post(request, pk):
@@ -717,3 +722,22 @@ def toggle_follow_post(request, post_id):
         'status': 'error',
         'message': 'Invalid request method'
     }, status=400)
+
+def public_profile_view(request, username):
+    User = get_user_model()
+    user = get_object_or_404(User, username=username)
+    
+    # Get user's posts
+    posts = Post.objects.filter(author=user).order_by('-created_at')
+    
+    # Get user's comments
+    comments = Comment.objects.filter(author=user).order_by('-created_at')
+    
+    context = {
+        'profile_user': user,
+        'posts': posts,
+        'comments': comments,
+        'is_own_profile': request.user == user if request.user.is_authenticated else False,
+    }
+    
+    return render(request, 'core/public_profile.html', context)
