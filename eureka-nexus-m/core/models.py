@@ -10,16 +10,10 @@ class Profile(AbstractUser):
     profile_picture = models.ImageField(
         upload_to='profile_pictures/',
         null=True,
-        blank=True,
-        default='core/img/default_profile.png'
+        blank=True
     )
     bio = models.TextField(default="Hello, I am a member of this platform.")
     birthday = models.DateField(null=True, blank=True)
-
-    def get_profile_picture_url(self):
-        if self.profile_picture and hasattr(self.profile_picture, 'url'):
-            return self.profile_picture.url
-        return static('core/img/default_profile.png')
 
 
 #profile_picture = models.ImageField(upload_to='profile_pics/', default='static/img/default_profile_pic.jpg')
