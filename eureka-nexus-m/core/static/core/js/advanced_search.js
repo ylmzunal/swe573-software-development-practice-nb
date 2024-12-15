@@ -51,17 +51,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 </div>
                 <div class="col-md-3">
                     <select class="form-select attribute-select" name="attribute_${fieldCounter}">
-                        <option value="">Select attribute...</option>
-                        <optgroup label="Basic Fields">
-                            <option value="title">Title</option>
-                            <option value="description">Description</option>
-                        </optgroup>
-                        <optgroup label="Attributes">
-                            ${getAttributeOptions()}
-                        </optgroup>
-                        <optgroup label="Semantic Tags">
-                            <option value="semantic_tag">Semantic Tag</option>
-                        </optgroup>
+                        ${getAttributeOptions()}
                     </select>
                 </div>
                 <div class="col-md-3">
@@ -107,18 +97,34 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Helper function to get attribute options
     function getAttributeOptions() {
-        const availableAttributes = [
-            {name: 'color', display_name: 'Color'},
-            {name: 'size', display_name: 'Size'},
-            {name: 'weight', display_name: 'Weight'},
-            {name: 'condition', display_name: 'Condition'},
-            {name: 'material', display_name: 'Material'},
-            {name: 'shape', display_name: 'Shape'}
-        ];
+        // Get the options from the first attribute select element
+        const firstSelect = document.querySelector('.attribute-select');
+        const optgroups = firstSelect.querySelectorAll('optgroup');
         
-        return availableAttributes.map(attr => 
-            `<option value="${attr.name}">${attr.display_name}</option>`
-        ).join('');
+        let optionsHtml = '';
+        
+        // Add Basic Fields
+        const basicFields = optgroups[0];
+        optionsHtml += `<optgroup label="Basic Fields">`;
+        basicFields.querySelectorAll('option').forEach(option => {
+            optionsHtml += `<option value="${option.value}">${option.textContent}</option>`;
+        });
+        optionsHtml += `</optgroup>`;
+        
+        // Add Attributes
+        const attributes = optgroups[1];
+        optionsHtml += `<optgroup label="Attributes">`;
+        attributes.querySelectorAll('option').forEach(option => {
+            optionsHtml += `<option value="${option.value}">${option.textContent}</option>`;
+        });
+        optionsHtml += `</optgroup>`;
+        
+        // Add Semantic Tags
+        optionsHtml += `<optgroup label="Semantic Tags">`;
+        optionsHtml += `<option value="semantic_tag">Semantic Tag</option>`;
+        optionsHtml += `</optgroup>`;
+        
+        return optionsHtml;
     }
 
     // Initialize Wikidata search functionality

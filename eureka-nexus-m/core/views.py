@@ -512,107 +512,87 @@ def advanced_search(request):
     search_performed = False
     posts = None
     user_votes = {}
+    
+    # Update available attributes to include all post attributes
     available_attributes = [
-        {'name': 'color', 'display_name': 'Color'},
+        {'name': 'title', 'display_name': 'Title'},
+        {'name': 'description', 'display_name': 'Description'},
+        {'name': 'color', 'display_name': 'Color', 'choices': Post.COLOUR_CHOICES},
+        {'name': 'shape', 'display_name': 'Shape', 'choices': Post.SHAPE_CHOICES},
+        {'name': 'condition', 'display_name': 'Condition', 'choices': Post.CONDITION_CHOICES},
+        {'name': 'semantic_tag', 'display_name': 'Semantic Tag'},
+        # Add attribute fields that are stored in PostAttribute
         {'name': 'size', 'display_name': 'Size'},
         {'name': 'weight', 'display_name': 'Weight'},
-        {'name': 'condition', 'display_name': 'Condition'},
         {'name': 'material', 'display_name': 'Material'},
-        {'name': 'shape', 'display_name': 'Shape'},
+        {'name': 'pattern', 'display_name': 'Pattern'},
+        {'name': 'texture', 'display_name': 'Texture'},
+        {'name': 'brand', 'display_name': 'Brand'},
+        {'name': 'manufacturer', 'display_name': 'Manufacturer'},
+        {'name': 'origin', 'display_name': 'Origin'},
+        {'name': 'age', 'display_name': 'Age'},
+        {'name': 'markings', 'display_name': 'Markings'},
     ]
 
     if request.GET:
         logger.debug(f"Search parameters: {request.GET}")
         search_performed = True
         
-        # Group search parameters
-        search_fields = []
-        
-        # Process all parameters to group related fields
-        for key, value in request.GET.items():
-            if key.startswith('attribute_'):
-                field_num = key.split('_')[1]
-                if value:  # if attribute is selected
-                    field_data = {
-                        'attribute': value,
-                        'value': request.GET.get(f'value_{field_num}', ''),
-                        'operator': request.GET.get(f'operator_{field_num}', 'AND'),
-                        'match_type': request.GET.get(f'match_{field_num}', 'include')
-                    }
-                    
-                    # If it's a semantic tag, get the tag ID
-                    if value == 'semantic_tag':
-                        field_data['tag_id'] = request.GET.get(f'semantic_tag_id_{field_num}')
-                    
-                    search_fields.append(field_data)
-
         # Initialize query
         base_query = Post.objects.all()
         
-        # Process each search field
-        for field in search_fields:
-            if not field['value']:  # Skip if no search value
-                continue
+        # Process search fields
+        for key, value in request.GET.items():
+            if key.startswith('attribute_') and value:
+                field_num = key.split('_')[1]
+                attribute = value
+                search_value = request.GET.get(f'value_{field_num}', '')
+                operator = request.GET.get(f'operator_{field_num}', 'AND')
+                match_type = request.GET.get(f'match_{field_num}', 'include')
+                
+                if not search_value:
+                    continue
 
-            attribute = field['attribute']
-            value = field['value']
-            operator = field['operator']
-            match_type = field['match_type']
-            
-            # Build the condition based on match type
-            if attribute == 'semantic_tag':
-                # Use the tag_id for semantic tag searches
-                tag_id = field.get('tag_id')
-                if tag_id:
-                    condition = Q(wikidata_tags__wikidata_id=tag_id)
+                # Handle different types of attributes
+                if attribute in ['title', 'description', 'color', 'shape', 'condition']:
+                    # Direct model fields
+                    field_name = 'colour' if attribute == 'color' else attribute
+                    if match_type == 'exact':
+                        condition = Q(**{f'{field_name}__exact': search_value})
+                    else:
+                        condition = Q(**{f'{field_name}__icontains': search_value})
+                
+                elif attribute == 'semantic_tag':
+                    # Handle semantic tag searches
+                    tag_id = request.GET.get(f'semantic_tag_id_{field_num}')
+                    if tag_id:
+                        condition = Q(wikidata_tags__wikidata_id=tag_id)
+                    else:
+                        continue
+                
                 else:
-                    continue  # Skip if no tag_id is provided
-            elif attribute == 'title':
-                if match_type == 'exact':
-                    condition = Q(title__iexact=value)
-                else:  # include
-                    condition = Q(title__icontains=value)
-            elif attribute == 'description':
-                if match_type == 'exact':
-                    condition = Q(description__exact=value)
-                else:  # include
-                    condition = Q(description__icontains=value)
-            elif attribute == 'color':
-                if match_type == 'exact':
-                    condition = Q(colour__exact=value)
-                else:
-                    condition = Q(colour__icontains=value)
-            elif attribute == 'size':
-                if match_type == 'exact':
-                    condition = (
-                        Q(size__exact=value) |
-                        Q(width__exact=value) |
-                        Q(height__exact=value) |
-                        Q(depth__exact=value)
-                    )
-                else:
-                    condition = (
-                        Q(size__icontains=value) |
-                        Q(width__icontains=value) |
-                        Q(height__icontains=value) |
-                        Q(depth__icontains=value)
-                    )
-            else:
-                if match_type == 'exact':
-                    condition = Q(**{f'{attribute}__exact': value})
-                else:
-                    condition = Q(**{f'{attribute}__icontains': value})
+                    # Handle PostAttribute fields
+                    if match_type == 'exact':
+                        condition = Q(
+                            attributes__name=attribute,
+                            attributes__value__icontains=f'"{search_value}"'
+                        )
+                    else:
+                        condition = Q(
+                            attributes__name=attribute,
+                            attributes__value__icontains=search_value
+                        )
 
-            # Apply the condition based on operator
-            if operator == 'NOT':
-                base_query = base_query.exclude(condition)
-            elif operator == 'OR':
-                base_query = base_query | Post.objects.filter(condition)
-            else:  # AND
-                base_query = base_query.filter(condition)
+                # Apply the condition based on operator
+                if operator == 'NOT':
+                    base_query = base_query.exclude(condition)
+                elif operator == 'OR':
+                    base_query = base_query | Post.objects.filter(condition)
+                else:  # AND
+                    base_query = base_query.filter(condition)
 
         # Finalize query
-        if search_fields:
+        if any(key.startswith('attribute_') for key in request.GET):
             posts = base_query.distinct().order_by('-created_at')
             logger.debug(f"Final query: {str(posts.query)}")
             logger.debug(f"Found {posts.count()} posts")
