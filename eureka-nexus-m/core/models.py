@@ -5,10 +5,27 @@ from django.contrib.auth.models import AbstractUser
 from django.core.validators import MaxLengthValidator
 from django.conf import settings
 from django.core.exceptions import ValidationError
+import uuid
+import os
+
+def get_unique_profile_path(instance, filename):
+    ext = filename.split('.')[-1]
+    filename = f'{uuid.uuid4()}.{ext}'
+    return os.path.join('profile_pictures', filename)
+
+def get_unique_post_path(instance, filename):
+    ext = filename.split('.')[-1]
+    filename = f'{uuid.uuid4()}.{ext}'
+    return os.path.join('post_images', filename)
+
+def get_unique_multimedia_path(instance, filename):
+    ext = filename.split('.')[-1]
+    filename = f'{uuid.uuid4()}.{ext}'
+    return os.path.join('post_multimedia', filename)
 
 class Profile(AbstractUser):
     profile_picture = models.ImageField(
-        upload_to='profile_pictures/',
+        upload_to=get_unique_profile_path,
         null=True,
         blank=True
     )
@@ -185,7 +202,7 @@ class Post(models.Model):
     author = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.CASCADE)
     title = models.CharField(max_length=300)
     description = models.TextField(max_length=1000)
-    image = models.ImageField(upload_to='post_pics/')
+    image = models.ImageField(upload_to=get_unique_post_path, blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
@@ -292,7 +309,7 @@ class PostMultimedia(models.Model):
     ]
 
     post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name='multimedia_files')
-    file = models.FileField(upload_to='post_multimedia/')
+    file = models.FileField(upload_to=get_unique_multimedia_path)
     file_type = models.CharField(max_length=20, choices=MULTIMEDIA_TYPES)
     title = models.CharField(max_length=200, blank=True)
     description = models.TextField(blank=True)
