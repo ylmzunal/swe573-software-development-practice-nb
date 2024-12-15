@@ -42,9 +42,6 @@
                                accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.txt">
                     </div>
                 </div>
-                <div id="multimediaList" class="mt-3">
-                    <!-- Uploaded files will be listed here -->
-                </div>
             </div>
             
             <div class="form-check mb-3">
@@ -476,15 +473,19 @@ const attributeConfig = {
 document.addEventListener('DOMContentLoaded', function() {
     const multimediaInput = document.getElementById('multimediaFiles');
     const previewContainer = document.getElementById('multimediaPreview');
-    const multimediaList = document.getElementById('multimediaList');
     const uploadedFiles = new Set();
-
+    let selectedFiles = []; // Array to keep track of selected files
+    
     multimediaInput.addEventListener('change', function(e) {
         const files = Array.from(e.target.files);
+        console.log('Files selected:', files.map(f => f.name));
+        
+        // Add new files to our selectedFiles array
+        selectedFiles = selectedFiles.concat(files);
         
         files.forEach(file => {
             if (uploadedFiles.has(file.name)) {
-                return; // Skip duplicate files
+                return;
             }
             
             uploadedFiles.add(file.name);
@@ -492,16 +493,16 @@ document.addEventListener('DOMContentLoaded', function() {
             const itemDiv = document.createElement('div');
             itemDiv.className = 'multimedia-item';
             
-            // Create remove button
             const removeBtn = document.createElement('button');
             removeBtn.className = 'remove-btn';
             removeBtn.innerHTML = '×';
             removeBtn.onclick = function() {
                 itemDiv.remove();
                 uploadedFiles.delete(file.name);
+                // Remove file from selectedFiles array
+                selectedFiles = selectedFiles.filter(f => f.name !== file.name);
             };
             
-            // Handle different file types
             if (file.type.startsWith('image/')) {
                 reader.onload = function(e) {
                     itemDiv.innerHTML = `
@@ -527,6 +528,37 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             
             previewContainer.appendChild(itemDiv);
+        });
+    });
+
+    // Handle form submission
+    document.getElementById('postForm').addEventListener('submit', function(e) {
+        e.preventDefault(); // Prevent default form submission
+        
+        // Create FormData from the form
+        const formData = new FormData(this);
+        
+        // Remove existing multimedia_files entries
+        formData.delete('multimedia_files');
+        
+        // Add each selected file individually
+        selectedFiles.forEach((file, index) => {
+            formData.append('multimedia_files', file);
+        });
+        
+        // Submit the form using fetch
+        fetch(this.action, {
+            method: 'POST',
+            body: formData,
+            credentials: 'same-origin'
+        })
+        .then(response => {
+            if (response.redirected) {
+                window.location.href = response.url;
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
         });
     });
 });

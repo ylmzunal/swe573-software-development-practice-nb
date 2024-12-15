@@ -172,18 +172,32 @@ def create_post(request):
             
             # Handle multimedia files
             multimedia_files = request.FILES.getlist('multimedia_files')
+            print(f"Number of multimedia files: {len(multimedia_files)}")
+            
             for index, f in enumerate(multimedia_files):
-                file_type = 'image' if f.content_type.startswith('image/') else \
-                           'video' if f.content_type.startswith('video/') else \
-                           'audio' if f.content_type.startswith('audio/') else \
-                           'document'
+                print(f"Processing file {index + 1}: {f.name}")
+                content_type = f.content_type.lower()
                 
-                PostMultimedia.objects.create(
-                    post=post,
-                    file=f,
-                    file_type=file_type,
-                    order=index
-                )
+                # Determine file type
+                if content_type.startswith('image/'):
+                    file_type = 'image'
+                elif content_type.startswith('video/'):
+                    file_type = 'video'
+                elif content_type.startswith('audio/'):
+                    file_type = 'audio'
+                else:
+                    file_type = 'document'
+                
+                try:
+                    multimedia = PostMultimedia.objects.create(
+                        post=post,
+                        file=f,
+                        file_type=file_type,
+                        order=index
+                    )
+                    print(f"Created multimedia {index + 1}: {multimedia.id}")
+                except Exception as e:
+                    print(f"Error saving file {f.name}: {str(e)}")
             
             # Now process and save attributes
             attributes_to_create = []
