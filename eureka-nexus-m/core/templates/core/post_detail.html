@@ -142,9 +142,17 @@
                     <p class="mb-1">
                         <strong>Posted by:</strong> 
                         {% if post.author %}
-                            {{ post.author.username }}
+                            <a href="{% url 'public_profile' post.author.username %}" class="text-decoration-none">
+                                {% if post.author.profile.avatar %}
+                                    <img src="{{ post.author.profile.avatar.url }}" 
+                                         class="rounded-circle me-2" 
+                                         alt="{{ post.author.username }}"
+                                         style="width: 30px; height: 30px; object-fit: cover;">
+                                {% endif %}
+                                <span class="text-muted">@{{ post.author.username }}</span>
+                            </a>
                         {% else %}
-                            Anonymous
+                            <span class="text-muted">Anonymous</span>
                         {% endif %}
                     </p>
                     <p class="mb-1"><strong>Posted:</strong> {{ post.created_at|date:"F j, Y" }}</p>
