@@ -6,8 +6,8 @@ venv/
 ENV/
 env.bak/
 venv.bak/
-eureka-nexus/eureka_nexus_venv/
-eureka_nexus_venv/
+eureka-nexus/eureka-nexus-m-venv/
+eureka-nexus-m-venv/
 
 # Ignore sensitive files
 *.env
