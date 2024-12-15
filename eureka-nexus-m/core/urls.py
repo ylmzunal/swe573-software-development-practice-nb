@@ -31,6 +31,7 @@ urlpatterns = [
     path('post/<int:post_id>/follow/', views.toggle_follow_post, name='toggle_follow_post'),
     path('profile/<str:username>/', views.public_profile_view, name='public_profile'),
     path('delete-account/', views.delete_account, name='delete_account'),
+    path('toggle-follow/<str:username>/', views.toggle_follow_user, name='toggle_follow_user'),
 ]
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

@@ -3,7 +3,7 @@ from django.contrib.auth import login, authenticate, logout
 from django.contrib.auth.forms import AuthenticationForm
 from .forms import ProfileCreationForm, ProfileChangeForm, PostForm, WikidataTagFormSet, CommentForm
 from django.contrib import messages
-from .models import Profile, Post, PostAttribute, PostMultimedia, Comment, Vote, PostFollower
+from .models import Profile, Post, PostAttribute, PostMultimedia, Comment, Vote, PostFollower, UserFollower
 from django import forms
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
@@ -21,6 +21,8 @@ from django.contrib.auth import get_user_model
 from .models import Post, Comment
 
 logger = logging.getLogger(__name__)
+
+User = get_user_model()
 
 
 def home(request):
@@ -94,6 +96,16 @@ def profile_view(request):
         followers__user=request.user
     ).select_related('author').prefetch_related('comments').order_by('-followers__followed_at')
     
+    # Get users the current user is following
+    following_users = User.objects.filter(
+        followers__user=request.user
+    ).order_by('-followers__followed_at')
+    
+    # Get users who follow the current user
+    follower_users = User.objects.filter(
+        following__following=request.user
+    ).order_by('-following__followed_at')
+    
     # Update user_votes to include followed posts
     all_posts = list(user_posts) + list(voted_posts) + list(commented_posts) + list(followed_posts)
     user_votes = {
@@ -110,6 +122,8 @@ def profile_view(request):
         "voted_posts": voted_posts,
         "commented_posts": commented_posts,
         "followed_posts": followed_posts,
+        "following_users": following_users,
+        "follower_users": follower_users,
         "user_votes": user_votes,
     })
 
@@ -723,9 +737,61 @@ def toggle_follow_post(request, post_id):
         'message': 'Invalid request method'
     }, status=400)
 
+@login_required
+def toggle_follow_user(request, username):
+    if request.method == 'POST':
+        User = get_user_model()
+        user_to_follow = get_object_or_404(User, username=username)
+        
+        # Can't follow yourself
+        if request.user == user_to_follow:
+            return JsonResponse({
+                'status': 'error',
+                'message': 'You cannot follow yourself'
+            }, status=400)
+        
+        try:
+            # Try to find existing follow relationship
+            follow = UserFollower.objects.filter(user=request.user, following=user_to_follow)
+            if follow.exists():
+                # Unfollow
+                follow.delete()
+                is_following = False
+            else:
+                # Follow
+                UserFollower.objects.create(user=request.user, following=user_to_follow)
+                is_following = True
+            
+            # Get updated follower count
+            followers_count = UserFollower.objects.filter(following=user_to_follow).count()
+            
+            return JsonResponse({
+                'status': 'success',
+                'is_following': is_following,
+                'followers_count': followers_count
+            })
+        except Exception as e:
+            print(f"Error in toggle_follow_user: {str(e)}")  # Add debugging
+            return JsonResponse({
+                'status': 'error',
+                'message': str(e)
+            }, status=500)
+    
+    return JsonResponse({
+        'status': 'error',
+        'message': 'Invalid request method'
+    }, status=400)
+
 def public_profile_view(request, username):
     User = get_user_model()
     user = get_object_or_404(User, username=username)
+    
+    is_following = False
+    if request.user.is_authenticated:
+        is_following = UserFollower.objects.filter(
+            user=request.user, 
+            following=user
+        ).exists()
     
     # Get user's posts
     posts = Post.objects.filter(author=user).order_by('-created_at')
@@ -733,11 +799,18 @@ def public_profile_view(request, username):
     # Get user's comments
     comments = Comment.objects.filter(author=user).order_by('-created_at')
     
+    # Get followers and following counts
+    followers_count = UserFollower.objects.filter(following=user).count()
+    following_count = UserFollower.objects.filter(user=user).count()
+    
     context = {
         'profile_user': user,
         'posts': posts,
         'comments': comments,
         'is_own_profile': request.user == user if request.user.is_authenticated else False,
+        'is_following': is_following,
+        'followers_count': followers_count,
+        'following_count': following_count,
     }
     
     return render(request, 'core/public_profile.html', context)

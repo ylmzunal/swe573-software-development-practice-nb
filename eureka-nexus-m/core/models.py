@@ -462,3 +462,11 @@ class Vote(models.Model):
             raise ValidationError('Invalid vote type')
         if bool(self.post) == bool(self.comment):
             raise ValidationError('Vote must be either on a post or a comment, not both or neither')
+
+class UserFollower(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='following', on_delete=models.CASCADE)
+    following = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='followers', on_delete=models.CASCADE)
+    followed_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('user', 'following')
