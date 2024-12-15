@@ -5,7 +5,8 @@
 
 {% block content %}
 <div class="container mt-4">
-    <div class="card">
+    <!-- Profile Info Section -->
+    <div class="card mb-4">
         <div class="card-body">
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <h2 class="mb-0">Your Profile</h2>
@@ -35,6 +36,118 @@
             </div>
         </div>
     </div>
+
+    <!-- Activity Overview -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card h-100">
+                <div class="card-body text-center">
+                    <i class="fas fa-pencil-alt fa-2x mb-2 text-primary"></i>
+                    <h5 class="card-title">Your Posts</h5>
+                    <p class="h3 mb-2">{{ user_posts.count }}</p>
+                    <a href="#your-posts" class="btn btn-outline-primary btn-sm">View All Posts</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card h-100">
+                <div class="card-body text-center">
+                    <i class="fas fa-thumbs-up fa-2x mb-2 text-success"></i>
+                    <h5 class="card-title">Your Reactions</h5>
+                    <p class="h3 mb-2">{{ voted_posts.count }}</p>
+                    <a href="#your-reactions" class="btn btn-outline-success btn-sm">View All Reactions</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card h-100">
+                <div class="card-body text-center">
+                    <i class="fas fa-comments fa-2x mb-2 text-info"></i>
+                    <h5 class="card-title">Your Interactions</h5>
+                    <p class="h3 mb-2">{{ commented_posts.count }}</p>
+                    <a href="#your-interactions" class="btn btn-outline-info btn-sm">View All Interactions</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Your Posts Section -->
+    <div id="your-posts" class="card mb-4">
+        <div class="card-header">
+            <h3 class="mb-0">Your Posts</h3>
+        </div>
+        <div class="card-body">
+            {% if user_posts %}
+                <div class="row">
+                    {% for post in user_posts %}
+                        <div class="col-md-6 mb-3">
+                            {% include 'core/partials/post_card.html' with post=post user_votes=user_votes %}
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p class="text-muted">You haven't created any posts yet.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Your Reactions Section -->
+    <div id="your-reactions" class="card mb-4">
+        <div class="card-header">
+            <h3 class="mb-0">Your Reactions</h3>
+        </div>
+        <div class="card-body">
+            {% if voted_posts %}
+                <div class="row">
+                    {% for post in voted_posts %}
+                        <div class="col-md-6 mb-3">
+                            {% include 'core/partials/post_card.html' with post=post user_votes=user_votes %}
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p class="text-muted">You haven't reacted to any posts yet.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Your Interactions Section -->
+    <div id="your-interactions" class="card mb-4">
+        <div class="card-header">
+            <h3 class="mb-0">Your Interactions</h3>
+        </div>
+        <div class="card-body">
+            {% if commented_posts %}
+                <div class="row">
+                    {% for post in commented_posts %}
+                        <div class="col-md-6 mb-3">
+                            {% include 'core/partials/post_card.html' with post=post user_votes=user_votes %}
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p class="text-muted">You haven't commented on any posts yet.</p>
+            {% endif %}
+        </div>
+    </div>
 </div>
+
+{% block extra_js %}
+<script>
+    // Smooth scroll for anchor links
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener('click', function (e) {
+            e.preventDefault();
+            const target = document.querySelector(this.getAttribute('href'));
+            if (target) {
+                target.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'start'
+                });
+            }
+        });
+    });
+</script>
+{% endblock %}
 {% endblock %}
 

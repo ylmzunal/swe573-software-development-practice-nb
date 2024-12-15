@@ -73,7 +73,38 @@ def logout_view(request):
 
 @login_required
 def profile_view(request):
-    return render(request, 'core/profile.html', {"user": request.user})
+    # Get user's posts
+    user_posts = Post.objects.filter(author=request.user).order_by('-created_at')
+    
+    # Get posts the user has voted on
+    voted_posts = Post.objects.filter(
+        votes__user=request.user
+    ).select_related('author').prefetch_related('comments').order_by('-votes__created_at')
+    
+    # Get posts the user has commented on (excluding posts they authored)
+    commented_posts = Post.objects.filter(
+        comments__author=request.user
+    ).exclude(
+        author=request.user
+    ).select_related('author').prefetch_related('comments').distinct().order_by('-comments__created_at')
+    
+    # Get user's votes for all displayed posts
+    all_posts = list(user_posts) + list(voted_posts) + list(commented_posts)
+    user_votes = {
+        vote.post_id: vote 
+        for vote in Vote.objects.filter(
+            user=request.user, 
+            post__in=all_posts
+        )
+    }
+    
+    return render(request, 'core/profile.html', {
+        "user": request.user,
+        "user_posts": user_posts,
+        "voted_posts": voted_posts,
+        "commented_posts": commented_posts,
+        "user_votes": user_votes,
+    })
 
 from django.contrib.auth import update_session_auth_hash
 
