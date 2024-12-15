@@ -1,7 +1,32 @@
 {% load custom_filters %}
 
 <div class="card h-100">
-    {% if post.image %}
+    {% if post.multimedia_files.exists %}
+        <div id="carousel-{{ post.id }}" class="carousel slide" data-bs-ride="carousel">
+            <div class="carousel-inner">
+                {% for media in post.multimedia_files.all %}
+                    {% if media.is_image %}
+                        <div class="carousel-item {% if forloop.first %}active{% endif %}">
+                            <img src="{{ media.file.url }}" 
+                                 class="card-img-top d-block w-100" 
+                                 alt="{{ post.title }}" 
+                                 style="height: 200px; object-fit: cover;">
+                        </div>
+                    {% endif %}
+                {% endfor %}
+            </div>
+            {% if post.multimedia_files.count > 1 %}
+                <button class="carousel-control-prev" type="button" data-bs-target="#carousel-{{ post.id }}" data-bs-slide="prev">
+                    <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                    <span class="visually-hidden">Previous</span>
+                </button>
+                <button class="carousel-control-next" type="button" data-bs-target="#carousel-{{ post.id }}" data-bs-slide="next">
+                    <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                    <span class="visually-hidden">Next</span>
+                </button>
+            {% endif %}
+        </div>
+    {% elif post.image %}
         <img src="{{ post.image.url }}" class="card-img-top" alt="{{ post.title }}" style="height: 200px; object-fit: cover;">
     {% endif %}
     <div class="card-body">

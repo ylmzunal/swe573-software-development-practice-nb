@@ -11,7 +11,51 @@
     <div class="row">
         <div class="col-md-8">
             <div class="card">
-                <img src="{{ post.image.url }}" class="card-img-top" alt="{{ post.title }}">
+                {% if post.multimedia_files.exists %}
+                    <div id="postDetailCarousel" class="carousel slide" data-bs-ride="carousel">
+                        <div class="carousel-indicators">
+                            {% for media in post.multimedia_files.all %}
+                                {% if media.is_image %}
+                                    <button type="button" 
+                                            data-bs-target="#postDetailCarousel" 
+                                            data-bs-slide-to="{{ forloop.counter0 }}" 
+                                            {% if forloop.first %}class="active"{% endif %}
+                                            aria-label="Slide {{ forloop.counter }}">
+                                    </button>
+                                {% endif %}
+                            {% endfor %}
+                        </div>
+                        <div class="carousel-inner">
+                            {% for media in post.multimedia_files.all %}
+                                {% if media.is_image %}
+                                    <div class="carousel-item {% if forloop.first %}active{% endif %}">
+                                        <img src="{{ media.file.url }}" 
+                                             class="d-block w-100" 
+                                             alt="{{ post.title }}"
+                                             style="max-height: 500px; object-fit: contain;"
+                                             data-bs-toggle="modal"
+                                             data-bs-target="#imageModal{{ media.id }}">
+                                    </div>
+                                {% endif %}
+                            {% endfor %}
+                        </div>
+                        {% if post.multimedia_files.count > 1 %}
+                            <button class="carousel-control-prev" type="button" data-bs-target="#postDetailCarousel" data-bs-slide="prev">
+                                <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                                <span class="visually-hidden">Previous</span>
+                            </button>
+                            <button class="carousel-control-next" type="button" data-bs-target="#postDetailCarousel" data-bs-slide="next">
+                                <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                                <span class="visually-hidden">Next</span>
+                            </button>
+                        {% endif %}
+                    </div>
+                {% elif post.image %}
+                    <img src="{{ post.image.url }}" 
+                         class="card-img-top" 
+                         alt="{{ post.title }}"
+                         style="max-height: 500px; object-fit: contain;">
+                {% endif %}
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-center mb-3">
                         <h2 class="card-title">{{ post.title }}</h2>
@@ -202,6 +246,24 @@
     {% endif %}
 {% endfor %}
 
+<!-- Add image modals for fullscreen view -->
+{% for media in post.multimedia_files.all %}
+    {% if media.is_image %}
+        <div class="modal fade" id="imageModal{{ media.id }}" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-xl modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-body p-0">
+                        <img src="{{ media.file.url }}" 
+                             class="img-fluid w-100" 
+                             alt="{{ post.title }}">
+                    </div>
+                    <button type="button" class="btn-close position-absolute top-0 end-0 m-3" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+{% endfor %}
+
 
 {% endblock %}
 
@@ -322,6 +384,36 @@
         align-items: center;
         flex-wrap: wrap;
         gap: 0.5rem;
+    }
+
+    .carousel-item img {
+        background-color: #f8f9fa;
+    }
+    
+    .carousel-item img:hover {
+        cursor: pointer;
+    }
+    
+    .carousel-indicators {
+        margin-bottom: 0;
+    }
+    
+    .carousel-indicators button {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        margin: 0 5px;
+    }
+    
+    .modal .btn-close {
+        background-color: white;
+        opacity: 0.8;
+        border-radius: 50%;
+        padding: 0.5rem;
+    }
+    
+    .modal .btn-close:hover {
+        opacity: 1;
     }
 </style>
 {% endblock %}
