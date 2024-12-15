@@ -74,7 +74,7 @@
                             </div>
                         </div>
                     {% endif %}
-
+                    {% include 'core/partials/vote_buttons.html' with post=post user_vote=user_vote %}
                     <!-- Comments Section -->
                     {% include 'core/partials/comments.html' with post=post comment_form=comment_form %}
                 </div>
@@ -202,7 +202,7 @@
     {% endif %}
 {% endfor %}
 
-{% include 'core/partials/vote_buttons.html' with post=post user_vote=user_vote %}
+
 {% endblock %}
 
 {% block extra_css %}

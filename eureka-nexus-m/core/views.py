@@ -20,22 +20,20 @@ import logging
 from django.contrib.postgres.search import SearchVector, SearchQuery, SearchRank
 logger = logging.getLogger(__name__)
 
-def get_user_votes(user, posts):
-    if not user.is_authenticated:
-        return {}
-    votes = Vote.objects.filter(user=user, content_type=ContentType.objects.get_for_model(Post), 
-                              object_id__in=[post.id for post in posts])
-    return {vote.object_id: vote.vote_type for vote in votes}
+
 
 def home(request):
     recent_posts = Post.objects.all().order_by('-created_at')[:6]
-    user_votes = get_user_votes(request.user, recent_posts) if request.user.is_authenticated else {}
-    
-    context = {
-        'recent_posts': recent_posts,
-        'user_votes': user_votes,
-    }
-    return render(request, 'core/home.html', context)
+    user_votes = {}
+    if request.user.is_authenticated:
+        user_votes = {
+            vote.post_id: vote 
+            for vote in Vote.objects.filter(user=request.user, post__in=recent_posts)
+        }
+    return render(request, 'core/home.html', {
+        "recent_posts": recent_posts,
+        "user_votes": user_votes
+    })
 
 # AUTH
 
@@ -597,8 +595,7 @@ def advanced_search(request):
             logger.debug(f"Final query: {str(posts.query)}")
             logger.debug(f"Found {posts.count()} posts")
             
-            # Get user votes
-            user_votes = get_user_votes(request.user, posts) if request.user.is_authenticated else {}
+            
 
             # Add pagination
             paginator = Paginator(posts, 10)
