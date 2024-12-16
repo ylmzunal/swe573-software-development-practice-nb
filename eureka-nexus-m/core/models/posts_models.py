@@ -8,34 +8,94 @@ from django.core.exceptions import ValidationError
 import uuid
 import os
 
+
+# a function to get a unique path for a profile picture
 def get_unique_profile_path(instance, filename):
     ext = filename.split('.')[-1]
     filename = f'{uuid.uuid4()}.{ext}'
     return os.path.join('profile_pictures', filename)
 
+
+# a function to get a unique path for a post image
 def get_unique_post_path(instance, filename):
     ext = filename.split('.')[-1]
     filename = f'{uuid.uuid4()}.{ext}'
     return os.path.join('post_images', filename)
 
+
+# a function to get a unique path for a post multimedia
 def get_unique_multimedia_path(instance, filename):
     ext = filename.split('.')[-1]
     filename = f'{uuid.uuid4()}.{ext}'
     return os.path.join('post_multimedia', filename)
 
-class Profile(AbstractUser):
-    profile_picture = models.ImageField(
-        upload_to=get_unique_profile_path,
-        null=True,
-        blank=True
-    )
-    bio = models.TextField(default="Hello, I am a member of this platform.")
-    birthday = models.DateField(null=True, blank=True)
 
 
-#profile_picture = models.ImageField(upload_to='profile_pics/', default='static/img/default_profile_pic.jpg')
-
-
+# a model to store posts with the following fields:
+# author: the user who created the post
+# brand: the brand of the post
+# colour: the colour of the post
+# custom_colour: the custom colour of the post
+# condition: the condition of the post
+# custom_condition: the custom condition of the post    
+# created_at: the date and time when the post was created
+# depth: the depth of the post
+# description: the description of the post
+# elasticity: the elasticity of the post
+# custom_elasticity: the custom elasticity of the post
+# functionality: the functionality of the post
+# custom_functionality: the custom functionality of the post
+# hardness: the hardness of the post
+# custom_hardness: the custom hardness of the post
+# image: the image of the post
+# image_description: the description of the image of the post
+# icon: the icon of the post
+# icon_description: the description of the icon of the post
+# location: the location of the post
+# markings: the markings of the post
+# material: the material of the post
+# custom_material: the custom material of the post
+# other_multimedia: the other multimedia of the post
+# origin: the origin of the post
+# origin_of_acquisition: the origin of acquisition of the post
+# pattern: the pattern of the post
+# custom_pattern: the custom pattern of the post
+# post: the post
+# print_description: the description of the print of the post
+# shape: the shape of the post
+# custom_shape: the custom shape of the post
+# size: the size of the post
+# size_exactness: the exactness of the size
+# size_type: the type of the size (exact, approximate)
+# size_unit: the unit of the size
+# approximate_size: the approximate size of the post
+# height: the height of the post
+# width: the width of the post
+# length: the length of the post
+# smell: the smell of the post
+# custom_smell: the custom smell of the post
+# status: the status of the post (unknown, solved)  
+# taste: the taste of the post
+# custom_taste: the custom taste of the post
+# texture: the texture of the post
+# custom_texture: the custom texture of the post
+# time_period: the time period of the post
+# custom_time_period: the custom time period of the post
+# transparency: the transparency of the post
+# custom_transparency: the custom transparency of the post  
+# weight: the weight of the post
+# weight_exactness: the exactness of the weight (exact, approximate)
+# weight_type: the type of the weight (exact, approximate)
+# weight_unit: the unit of the weight
+# approximate_weight: the approximate weight of the post
+# custom_approximate_weight: the custom approximate weight of the post
+# exact_weight: the exact weight of the post
+# updated_at: the date and time when the post was last updated 
+# the relationship is one to many between post and comment and one post can have multiple comments and one comment can have only one post
+# the relationship is one to many between post and multimedia and one post can have multiple multimedia and one multimedia can have only one post
+# the relationship is one to many between post and wikidata_tag and one post can have multiple wikidata_tags and one wikidata_tag can have only one post
+# the relationship is one to many between post and post_attribute and one post can have multiple post_attributes and one post_attribute can have only one post
+# the relationship is one to many between post and post_multimedia and one post can have multiple post_multimedia and one post_multimedia can have only one post
 class Post(models.Model):
     EXACTNESS_CHOICES = [
         ('exact', 'Exact'),
@@ -211,6 +271,8 @@ class Post(models.Model):
         blank=True,
         related_name='posts'
     )
+
+    # required fields
     title = models.CharField(max_length=300)
     description = models.TextField(max_length=1000)
     image = models.ImageField(upload_to=get_unique_post_path, blank=True, null=True)
@@ -220,6 +282,19 @@ class Post(models.Model):
     # Optional fields
     size = models.CharField(max_length=50, blank=True, null=True)
     size_exactness = models.CharField(max_length=20, choices=EXACTNESS_CHOICES, blank=True, null=True)
+    size_type = models.CharField(max_length=20, choices=EXACTNESS_CHOICES, blank=True, null=True)
+    approximate_size = models.CharField(max_length=100, blank=True, null=True)
+    width = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+    height = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+    depth = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+    size_unit = models.CharField(max_length=5, choices=SIZE_UNIT_CHOICES, blank=True, null=True)
+
+    weight_type = models.CharField(max_length=20, choices=EXACTNESS_CHOICES, blank=True, null=True)
+    approximate_weight = models.CharField(max_length=20, choices=APPROXIMATE_WEIGHT_CHOICES, blank=True, null=True)
+    custom_approximate_weight = models.CharField(max_length=100, blank=True, null=True)
+    exact_weight = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+    weight_unit = models.CharField(max_length=5, choices=WEIGHT_UNIT_CHOICES, blank=True, null=True)
+
     colour = models.CharField(max_length=20, choices=COLOUR_CHOICES, blank=True, null=True)
     custom_colour = models.CharField(max_length=50, blank=True, null=True)
     shape = models.CharField(max_length=20, choices=SHAPE_CHOICES, blank=True, null=True)
@@ -243,8 +318,6 @@ class Post(models.Model):
     custom_functionality = models.CharField(max_length=300, blank=True, null=True)
     other_multimedia = models.ImageField(upload_to='post_other_images/', blank=True, null=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='unknown')
-
-    # New fields
     material = models.CharField(max_length=20, choices=MATERIAL_CHOICES, blank=True, null=True)
     custom_material = models.CharField(max_length=100, blank=True, null=True)
     image_description = models.TextField(max_length=500, blank=True, null=True)
@@ -262,24 +335,12 @@ class Post(models.Model):
     custom_elasticity = models.CharField(max_length=100, blank=True, null=True)
     transparency = models.CharField(max_length=20, choices=TRANSPARENCY_CHOICES, blank=True, null=True)
     custom_transparency = models.CharField(max_length=100, blank=True, null=True)
-    weight_type = models.CharField(max_length=20, choices=EXACTNESS_CHOICES, blank=True, null=True)
-    approximate_weight = models.CharField(max_length=20, choices=APPROXIMATE_WEIGHT_CHOICES, blank=True, null=True)
-    custom_approximate_weight = models.CharField(max_length=100, blank=True, null=True)
-    exact_weight = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
-    weight_unit = models.CharField(max_length=5, choices=WEIGHT_UNIT_CHOICES, blank=True, null=True)
-    size_type = models.CharField(max_length=20, choices=EXACTNESS_CHOICES, blank=True, null=True)
-    approximate_size = models.CharField(max_length=100, blank=True, null=True)
-    width = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
-    height = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
-    depth = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
-    size_unit = models.CharField(max_length=5, choices=SIZE_UNIT_CHOICES, blank=True, null=True)
     location = models.CharField(max_length=300, blank=True, null=True)
 
     def __str__(self):
         return self.title
 
-    def has_answer_comment(self):
-        """Check if the post has at least one comment marked as answer"""
+    def has_answer_comment(self): # to check if the post has at least one comment marked as answer
         return self.comments.filter(tag='answer').exists()
 
     def upvote_count(self):
@@ -288,17 +349,13 @@ class Post(models.Model):
     def downvote_count(self):
         return self.votes.filter(vote_type='down').count()
 
-class PostFollower(models.Model):
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='followed_posts')
-    post = models.ForeignKey('Post', on_delete=models.CASCADE, related_name='followers')
-    followed_at = models.DateTimeField(auto_now_add=True)
 
-    class Meta:
-        unique_together = ('user', 'post')
-
-    def __str__(self):
-        return f"{self.user.username} follows {self.post.title}"
-
+# a model to store wikidata tags with the following fields:
+# post: the post that the wikidata tag is associated with
+# wikidata_id: the wikidata id of the tag
+# label: the label of the tag
+# link: the link to the wikidata page of the tag
+# the relationship is one to many between post and wikidata_tag and one post can have multiple wikidata_tags and one wikidata_tag can have only one post # consider changing to many to many
 class WikidataTag(models.Model):
     post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name='wikidata_tags')
     wikidata_id = models.CharField(max_length=20)
@@ -313,6 +370,14 @@ class WikidataTag(models.Model):
             self.link = f"https://www.wikidata.org/wiki/{self.wikidata_id}"
         super().save(*args, **kwargs)
 
+
+# a model to store post attributes with the following fields:
+# post: the post that the attribute is associated with
+# name: the name of the attribute
+# value: the value of the attribute
+# instance_id: the instance id of the attribute
+# created_at: the date and time when the attribute was created
+# the relationship is one to many between post and post_attribute and one post can have multiple post_attributes and one post_attribute can have only one post
 class PostAttribute(models.Model):
     post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name='attributes')
     name = models.CharField(max_length=100)
@@ -323,6 +388,16 @@ class PostAttribute(models.Model):
     class Meta:
         ordering = ['name', 'instance_id']
 
+
+# a model to store post multimedia with the following fields:
+# post: the post that the multimedia is associated with
+# file: the file of the multimedia
+# file_type: the type of the file (image, video, audio, document)
+# title: the title of the file
+# description: the description of the file
+# uploaded_at: the date and time when the file was uploaded
+# order: the order of the file in the post
+# the relationship is one to many between post and post_multimedia and one post can have multiple post_multimedia and one post_multimedia can have only one post
 class PostMultimedia(models.Model):
     MULTIMEDIA_TYPES = [
         ('image', 'Image'),
@@ -360,113 +435,3 @@ class PostMultimedia(models.Model):
     def is_document(self):
         return self.get_file_extension() in ['pdf', 'doc', 'docx', 'txt']
 
-class Comment(models.Model):
-    TAG_CHOICES = [
-        ('question', 'Question'),
-        ('hint', 'Hint'),
-        ('answer', 'Answer'),
-    ]
-
-    post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name='comments')
-    author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True)
-    content = models.TextField()
-    tag = models.CharField(max_length=10, choices=TAG_CHOICES, blank=True, null=True)
-    parent = models.ForeignKey('self', on_delete=models.CASCADE, null=True, blank=True, related_name='replies')
-    created_at = models.DateTimeField(auto_now_add=True)
-    is_deleted = models.BooleanField(default=False)
-
-    class Meta:
-        ordering = ['created_at']
-
-    def __str__(self):
-        return f'Comment by {self.author} on {self.post.title}'
-
-    def get_replies(self):
-        return Comment.objects.filter(parent=self).order_by('created_at')
-
-    def can_tag_as_answer(self, user):
-        """Check if user can tag this comment as an answer"""
-        return user == self.post.author
-
-    def can_edit_tag(self, user):
-        """Check if user can edit the tag of this comment"""
-        return user == self.post.author and not self.is_deleted
-
-    def save(self, *args, **kwargs):
-        # Check if this is an existing comment being modified
-        if self.pk:
-            old_instance = Comment.objects.get(pk=self.pk)
-            had_answer = old_instance.tag == 'answer'
-        else:
-            had_answer = False
-
-        super().save(*args, **kwargs)
-
-        # Check if answer status changed and update post status if needed
-        if had_answer != (self.tag == 'answer') or self.is_deleted:
-            self.update_post_status()
-
-    def update_post_status(self):
-        """Update post status based on answer comments"""
-        if self.post.status == 'solved' and not self.post.has_answer_comment():
-            # Only return True if the status actually changed
-            old_status = self.post.status
-            self.post.status = 'unknown'
-            self.post.save()
-            return old_status != 'unknown'  # Return True only if status changed
-        return False
-
-    def delete(self, *args, **kwargs):
-        post = self.post
-        had_answer = self.tag == 'answer'
-        super().delete(*args, **kwargs)
-        if had_answer and not post.has_answer_comment():
-            post.status = 'unknown'
-            post.save()
-
-    def upvote_count(self):
-        return self.votes.filter(vote_type='up').count()
-    
-    def downvote_count(self):
-        return self.votes.filter(vote_type='down').count()
-
-class Vote(models.Model):
-    VOTE_CHOICES = [
-        ('up', 'Upvote'),
-        ('down', 'Downvote'),
-    ]
-    
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
-    post = models.ForeignKey('Post', on_delete=models.CASCADE, related_name='votes', null=True, blank=True)
-    comment = models.ForeignKey('Comment', on_delete=models.CASCADE, related_name='votes', null=True, blank=True)
-    vote_type = models.CharField(max_length=4, choices=VOTE_CHOICES)
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    class Meta:
-        unique_together = [
-            ('user', 'post'),
-            ('user', 'comment')
-        ]
-        constraints = [
-            models.CheckConstraint(
-                check=(
-                    models.Q(post__isnull=False, comment__isnull=True) |
-                    models.Q(post__isnull=True, comment__isnull=False)
-                ),
-                name='vote_only_on_post_or_comment'
-            )
-        ]
-
-    def clean(self):
-        if self.vote_type not in ['up', 'down']:
-            raise ValidationError('Invalid vote type')
-        if bool(self.post) == bool(self.comment):
-            raise ValidationError('Vote must be either on a post or a comment, not both or neither')
-
-class UserFollower(models.Model):
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='following', on_delete=models.CASCADE)
-    following = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='followers', on_delete=models.CASCADE)
-    followed_at = models.DateTimeField(auto_now_add=True)
-
-    class Meta:
-        unique_together = ('user', 'following')

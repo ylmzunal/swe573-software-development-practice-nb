@@ -153,7 +153,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # these are the settings for the media files
 # !production change!
 MEDIA_URL = '/media/'
-MEDIA_ROOT = BASE_DIR / 'media'
+MEDIA_ROOT = BASE_DIR / 'media/'
 
 
 # these are the settings for the login and logout redirects
@@ -161,7 +161,7 @@ LOGIN_REDIRECT_URL = 'home'   # redirects after login
 LOGOUT_REDIRECT_URL = 'login' # redirects after logout
 
 
-# these are the settings for the security features of the application for production
+""" # these are the settings for the security features of the application for production
 # !production change!
 SECURE_BROWSER_XSS_FILTER = True
 SECURE_CONTENT_TYPE_NOSNIFF = True
@@ -171,4 +171,4 @@ SESSION_COOKIE_SECURE = True
 CSRF_COOKIE_SECURE = True
 X_FRAME_OPTIONS = 'SAMEORIGIN'
 SECURE_HSTS_SECONDS = 31536000
-SECURE_REFERRER_POLICY = 'strict-origin-when-cross-origin'
+SECURE_REFERRER_POLICY = 'strict-origin-when-cross-origin' """

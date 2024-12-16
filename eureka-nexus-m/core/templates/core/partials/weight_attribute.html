@@ -1,4 +1,4 @@
-{% load post_extras %}
+{% load custom_filters %}
 {% with data=attribute.value|parse_json %}
     {% if data.type == 'approximate' %}
         {{ data.approximate_weight }}

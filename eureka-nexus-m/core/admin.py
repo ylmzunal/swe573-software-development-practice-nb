@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
-from .models import Profile, Post, PostFollower, WikidataTag, PostAttribute, PostMultimedia, Comment, Vote, UserFollower
-from .forms import ProfileCreationForm, ProfileChangeForm
+from core.models import *
+from core.forms import *
 
 class ProfileAdmin(UserAdmin):
     model = Profile
