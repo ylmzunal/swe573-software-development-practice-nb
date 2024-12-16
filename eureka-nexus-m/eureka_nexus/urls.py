@@ -25,6 +25,9 @@ urlpatterns = [
     path('admin/', admin.site.urls),
 ]
 
+# these are for the media and static files when in debug mode and for local development
+# change the settings in settings.py to use the correct paths for production
+# !production change!
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
     urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

@@ -10,26 +10,33 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 
-from pathlib import Path
+from pathlib import Path # to get the base directory for the project
 
-from decouple import config
+
+from decouple import config # to get the environment variables
+
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
+# this is the base directory for the project
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 
-
 # SECURITY WARNING: keep the secret key used in production secret!
+# this is the secret key for the application, it is used to sign the session cookies
 SECRET_KEY = config('SECRET_KEY')
 
+
 # SECURITY WARNING: don't run with debug turned on in production!
+# !production change!
 DEBUG = True
 
+
+# these are the hosts that are allowed to access the application
+# !production change!
 ALLOWED_HOSTS = []
 
 
-# Application definition
-
+# these are the apps that are installed in the project, this project has only one app called core
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -40,8 +47,12 @@ INSTALLED_APPS = [
     "core",
 ]
 
+
+# this is the storage for the messages that are displayed to the user
 MESSAGE_STORAGE = 'django.contrib.messages.storage.session.SessionStorage'
 
+
+# these are the middleware that are executed during the request/response cycle
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -52,8 +63,12 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
+
+# this is the root URL configuration for the application
 ROOT_URLCONF = 'eureka_nexus.urls'
 
+
+# these are the settings for the templates that are used to render the pages
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
@@ -70,12 +85,13 @@ TEMPLATES = [
     },
 ]
 
+
+# this is the application that is used to serve the application
 WSGI_APPLICATION = 'eureka_nexus.wsgi.application'
 
 
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
-
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
@@ -90,7 +106,6 @@ DATABASES = {
 
 # Password validation
 # https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators
-
 AUTH_PASSWORD_VALIDATORS = [
     {
         'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
@@ -108,44 +123,52 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 
+# in order to use the custom user model, we need to set the AUTH_USER_MODEL to the custom user model
 AUTH_USER_MODEL = 'core.Profile'
+
 
 # Internationalization
 # https://docs.djangoproject.com/en/5.1/topics/i18n/
-
 LANGUAGE_CODE = 'en-us'
-
 TIME_ZONE = 'UTC'
-
 USE_I18N = True
-
 USE_TZ = True
 
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
-
+# !production change!
 STATIC_URL = '/static/'
 STATICFILES_DIRS = [
     BASE_DIR / 'core' / 'static',
 ]
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 
+
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
-
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 
+# these are the settings for the media files
+# !production change!
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
-LOGIN_REDIRECT_URL = 'home'   # Redirect after login
-LOGOUT_REDIRECT_URL = 'login' # Redirect after logout
+
+# these are the settings for the login and logout redirects
+LOGIN_REDIRECT_URL = 'home'   # redirects after login
+LOGOUT_REDIRECT_URL = 'login' # redirects after logout
 
 
-MIDDLEWARE = [
-    'django.contrib.sessions.middleware.SessionMiddleware', 
-    'django.contrib.auth.middleware.AuthenticationMiddleware',
-    'django.contrib.messages.middleware.MessageMiddleware',
-]
+# these are the settings for the security features of the application for production
+# !production change!
+SECURE_BROWSER_XSS_FILTER = True
+SECURE_CONTENT_TYPE_NOSNIFF = True
+SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+SECURE_SSL_REDIRECT = True
+SESSION_COOKIE_SECURE = True
+CSRF_COOKIE_SECURE = True
+X_FRAME_OPTIONS = 'SAMEORIGIN'
+SECURE_HSTS_SECONDS = 31536000
+SECURE_REFERRER_POLICY = 'strict-origin-when-cross-origin'
