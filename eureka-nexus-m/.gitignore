@@ -2,6 +2,7 @@
 .env
 .venv
 .env.db
+env.yaml
 env/
 venv/
 ENV/
