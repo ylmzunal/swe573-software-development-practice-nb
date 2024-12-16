@@ -94,3 +94,17 @@ def get_custom_value_from_json(attribute):
         return data.get('custom_value', '')
     except (json.JSONDecodeError, TypeError, AttributeError):
         return ''
+
+
+# a filter to add a CSS class to a form field
+@register.filter(name='add_class')
+def add_class(field, css_class):
+    if hasattr(field, 'as_widget'):
+        return field.as_widget(attrs={'class': css_class})
+    return field
+
+
+@register.filter(name='add_attrs')
+def add_attrs(field, attrs):
+    attr_name, attr_value = attrs.split(':')
+    return field.as_widget(attrs={attr_name: attr_value})

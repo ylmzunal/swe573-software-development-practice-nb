@@ -1,25 +1,123 @@
 {% extends 'core/base.html' %}
 {% load static %}
 
-
 {% block title %}Login{% endblock %}
 
+{% block extra_css %}
+<style>
+    .auth-container {
+        max-width: 450px;
+        margin: 2rem auto;
+        background: white;
+        border-radius: 16px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        padding: 2rem;
+    }
+
+    .auth-title {
+        color: var(--primary-color);
+        font-weight: 700;
+        text-align: center;
+        margin-bottom: 2rem;
+        font-size: 2rem;
+    }
+
+    .form-label {
+        color: var(--text-color);
+        font-weight: 500;
+        margin-bottom: 0.5rem;
+    }
+
+    .form-control {
+        border: 2px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 0.75rem 1rem;
+        transition: all 0.2s ease;
+    }
+
+    .form-control:focus {
+        border-color: var(--accent-color);
+        box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.1);
+    }
+
+    .auth-btn {
+        background-color: var(--accent-color);
+        color: white;
+        border: none;
+        border-radius: 8px;
+        padding: 0.75rem 1.5rem;
+        font-weight: 500;
+        width: 100%;
+        transition: all 0.2s ease;
+    }
+
+    .auth-btn:hover {
+        background-color: #2980b9;
+        transform: translateY(-1px);
+    }
+
+    .auth-link {
+        color: var(--accent-color);
+        text-decoration: none;
+        font-weight: 500;
+        transition: color 0.2s ease;
+    }
+
+    .auth-link:hover {
+        color: #2980b9;
+        text-decoration: underline;
+    }
+
+    .auth-divider {
+        margin: 2rem 0;
+        text-align: center;
+        position: relative;
+    }
+
+    .auth-divider::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 50%;
+        width: 100%;
+        height: 1px;
+        background: #e2e8f0;
+        z-index: 1;
+    }
+
+    .auth-divider span {
+        background: white;
+        padding: 0 1rem;
+        color: var(--light-text);
+        position: relative;
+        z-index: 2;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="max-w-md mx-auto bg-white p-8 rounded-lg shadow-md">
-    <h2 class="text-2xl font-bold mb-6 text-center">Login to Your Account</h2>
-    <form method="post" class="space-y-4">
+<div class="auth-container">
+    <h2 class="auth-title">Welcome Back</h2>
+    <form method="post" class="needs-validation" novalidate>
         {% csrf_token %}
-        <div>
-            <label for="id_username" class="block text-sm font-medium text-gray-700">Username</label>
-            <input type="text" name="username" id="id_username" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50">
+        <div class="mb-4">
+            <label for="id_username" class="form-label">Username</label>
+            <input type="text" name="username" id="id_username" class="form-control" required>
         </div>
-        <div>
-            <label for="id_password" class="block text-sm font-medium text-gray-700">Password</label>
-            <input type="password" name="password" id="id_password" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50">
+        <div class="mb-4">
+            <label for="id_password" class="form-label">Password</label>
+            <input type="password" name="password" id="id_password" class="form-control" required>
         </div>
-        <button type="submit" class="w-full bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50">Login</button>
+        <button type="submit" class="auth-btn">
+            <i class="fas fa-sign-in-alt me-2"></i>Login
+        </button>
     </form>
-    <p class="mt-4 text-center">Don't have an account? <a href="{% url 'signup' %}" class="text-blue-500 hover:underline">Sign up</a></p>
+    <div class="auth-divider">
+        <span>New to Eureka Nexus?</span>
+    </div>
+    <div class="text-center">
+        <a href="{% url 'signup' %}" class="auth-link">Create an account</a>
+    </div>
 </div>
 {% endblock %}
 
