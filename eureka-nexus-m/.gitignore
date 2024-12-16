@@ -1,6 +1,7 @@
 # Virtual Environment
 .env
 .venv
+.env.db
 env/
 venv/
 ENV/
