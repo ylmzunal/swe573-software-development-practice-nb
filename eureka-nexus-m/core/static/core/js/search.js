@@ -69,23 +69,6 @@ document.addEventListener('DOMContentLoaded', function() {
         } else if (query) {
             searchResults.innerHTML = '<div class="search-result-item">No results found</div>';
         }
-
-        const divider = document.createElement('div');
-        divider.className = 'dropdown-divider';
-        searchResults.appendChild(divider);
-
-        const advancedSearchDiv = document.createElement('div');
-        advancedSearchDiv.className = 'search-result-item advanced-search-link text-center';
-        
-        const queryParam = query ? `?title_1=${encodeURIComponent(query)}&title_operator_1=AND` : '';
-        
-        advancedSearchDiv.innerHTML = `
-            <a href="/advanced-search/${queryParam}" 
-               class="text-primary">
-                <i class="fas fa-search-plus"></i> Advanced Search
-            </a>
-        `;
-        searchResults.appendChild(advancedSearchDiv);
     }
 
     function highlightMatch(text, query) {
