@@ -1,0 +1,11 @@
+{% load custom_filters %}
+{% with data=attribute.value|parse_json %}
+    {% if data.type == 'approximate' %}
+        {{ data.approximate_weight }}
+        {% if data.approximate_weight == 'other' and data.custom_approximate_weight %}
+            ({{ data.custom_approximate_weight }})
+        {% endif %}
+    {% else %}
+        {{ data.exact_weight }} {{ data.weight_unit }}
+    {% endif %}
+{% endwith %} 

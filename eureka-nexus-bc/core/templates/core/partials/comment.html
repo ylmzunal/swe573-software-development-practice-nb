@@ -1,0 +1,86 @@
+{% load static %}
+{% load custom_filters %}
+
+<div class="comment mb-3" id="comment-{{ comment.pk }}">
+    <div class="comment-content p-3 border rounded {% if comment.parent %}ms-4{% endif %}">
+        <div class="d-flex justify-content-between align-items-start">
+            <div class="comment-header">
+                <strong>{{ comment.author.username }}</strong>
+                <small class="text-muted ms-2">{{ comment.created_at|timesince }} ago</small>
+                {% if comment.tag %}
+                    <span class="badge tag-badge {% if comment.tag == 'question' %}bg-info
+                                     {% elif comment.tag == 'hint' %}bg-warning
+                                     {% else %}bg-success{% endif %} ms-2">
+                        {{ comment.get_tag_display }}
+                    </span>
+                {% endif %}
+                {% if user == post.author and not comment.is_deleted %}
+                    <div class="dropdown d-inline-block ms-2">
+                        <button class="btn btn-sm btn-outline-secondary dropdown-toggle" 
+                                type="button" 
+                                data-bs-toggle="dropdown">
+                            Mark as Answer
+                        </button>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item change-tag" href="#" data-tag="">Remove Answer</a></li>
+                            <li><a class="dropdown-item change-tag" href="#" data-tag="answer">Mark as Answer</a></li>
+                        </ul>
+                    </div>
+                {% endif %}
+            </div>
+            {% if user == comment.author and not comment.is_deleted %}
+                <button class="btn btn-sm btn-danger delete-comment" 
+                        data-comment-id="{{ comment.id }}">
+                    <i class="fas fa-trash"></i>
+                </button>
+            {% endif %}
+        </div>
+
+        <div class="comment-text mt-2">
+            {% if comment.is_deleted %}
+                <em class="text-muted">[Deleted]</em>
+            {% else %}
+                {{ comment.content|linebreaks }}
+            {% endif %}
+        </div>
+
+        <div class="comment-footer d-flex justify-content-between align-items-center mt-2">
+            <div class="comment-actions">
+                {% if user.is_authenticated and not comment.is_deleted %}
+                    <button class="btn btn-sm btn-link reply-toggle" 
+                            data-comment-id="{{ comment.id }}">
+                        Reply
+                    </button>
+                {% endif %}
+            </div>
+            {% include 'core/partials/comment_vote_buttons.html' with comment=comment user_vote=comment_votes|get_item:comment.id %}
+        </div>
+
+        {% if user.is_authenticated and not comment.is_deleted %}
+            <div class="reply-form mt-2" id="reply-form-{{ comment.id }}" style="display: none;">
+                <form method="post" action="{% url 'add_reply' post.pk comment.id %}">
+                    {% csrf_token %}
+                    <textarea name="content" class="form-control" rows="2" required></textarea>
+                    <div class="d-flex justify-content-between align-items-center mt-2">
+                        <select name="tag" class="form-select w-auto">
+                            <option value="">No tag</option>
+                            {% if user == post.author %}
+                                <option value="answer">Answer</option>
+                            {% endif %}
+                            <option value="question">Question</option>
+                            <option value="hint">Hint</option>
+                        </select>
+                        <button type="submit" class="btn btn-sm btn-primary">Reply</button>
+                    </div>
+                </form>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- Nested replies -->
+    <div class="replies ms-4">
+        {% for reply in comment.get_replies %}
+            {% include 'core/partials/comment.html' with comment=reply %}
+        {% endfor %}
+    </div>
+</div> 

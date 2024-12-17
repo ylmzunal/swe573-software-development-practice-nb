@@ -1,0 +1,311 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}Profile{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Profile Header Section -->
+    <div class="profile-header card mb-4">
+        <div class="card-body">
+            <div class="row align-items-center">
+                <div class="col-md-3 text-center">
+                    {% if user.profile_picture %}
+                        <img src="{{ user.profile_picture.url }}"
+                             alt="Profile Picture" 
+                             class="rounded-circle profile-picture mb-3" 
+                             style="width: 150px; height: 150px; object-fit: cover;">
+                    {% else %}
+                        <img src="{% static 'core/img/default_profile.png' %}"
+                             alt="Default Profile Picture" 
+                             class="rounded-circle profile-picture mb-3" 
+                             style="width: 150px; height: 150px; object-fit: cover;">
+                    {% endif %}
+                </div>
+                <div class="col-md-6">
+                    <h2 class="mb-2">{{ user.get_full_name|default:user.username }}</h2>
+                    <p class="text-muted mb-2">@{{ user.username }}</p>
+                    <p class="mb-2">{{ user.bio|default:"No bio provided" }}</p>
+                    <p class="text-muted mb-0">
+                        <i class="fas fa-calendar-alt me-2"></i>Member since {{ user.date_joined|date:"F Y" }}
+                    </p>
+                </div>
+                <div class="col-md-3 text-end">
+                    <a href="{% url 'edit_profile' %}" class="btn btn-primary mb-2 w-100">
+                        <i class="fas fa-edit me-2"></i>Edit Profile
+                    </a>
+                    <button type="button" class="btn btn-outline-danger w-100" data-bs-toggle="modal" data-bs-target="#deleteAccountModal">
+                        <i class="fas fa-trash-alt me-2"></i>Delete Account
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Activity Overview -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card h-100">
+                <div class="card-body text-center">
+                    <i class="fas fa-pencil-alt fa-2x mb-2 text-primary"></i>
+                    <h5 class="card-title">Your Posts</h5>
+                    <p class="h3 mb-2">{{ user_posts.count }}</p>
+                    <a href="#your-posts" class="btn btn-outline-primary btn-sm">View All Posts</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card h-100">
+                <div class="card-body text-center">
+                    <i class="fas fa-thumbs-up fa-2x mb-2 text-success"></i>
+                    <h5 class="card-title">Your Reactions</h5>
+                    <p class="h3 mb-2">{{ voted_posts.count }}</p>
+                    <a href="#your-reactions" class="btn btn-outline-success btn-sm">View All Reactions</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card h-100">
+                <div class="card-body text-center">
+                    <i class="fas fa-comments fa-2x mb-2 text-info"></i>
+                    <h5 class="card-title">Your Interactions</h5>
+                    <p class="h3 mb-2">{{ commented_posts.count }}</p>
+                    <a href="#your-interactions" class="btn btn-outline-info btn-sm">View All Interactions</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card h-100">
+                <div class="card-body text-center">
+                    <i class="fas fa-bookmark fa-2x mb-2 text-warning"></i>
+                    <h5 class="card-title">Following</h5>
+                    <p class="h3 mb-2">{{ followed_posts.count }}</p>
+                    <a href="#your-following" class="btn btn-outline-warning btn-sm">View Following</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Network Overview -->
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-body">
+                    <ul class="nav nav-pills mb-3" id="networkTabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="following-tab" data-bs-toggle="pill" data-bs-target="#following" type="button" role="tab">
+                                Following ({{ following_users.count }})
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="followers-tab" data-bs-toggle="pill" data-bs-target="#followers" type="button" role="tab">
+                                Followers ({{ follower_users.count }})
+                            </button>
+                        </li>
+                    </ul>
+                    <div class="tab-content" id="networkTabsContent">
+                        <div class="tab-pane fade show active" id="following" role="tabpanel">
+                            <div class="row">
+                                {% for followed_user in following_users %}
+                                    <div class="col-md-6 col-lg-4 mb-3">
+                                        <div class="user-card d-flex align-items-center p-3 border rounded">
+                                            {% if followed_user.profile_picture %}
+                                                <img src="{{ followed_user.profile_picture.url }}" 
+                                                     alt="{{ followed_user.username }}'s profile picture"
+                                                     class="rounded-circle me-3" 
+                                                     style="width: 50px; height: 50px; object-fit: cover;">
+                                            {% else %}
+                                                <img src="{% static 'core/img/default_profile.png' %}" 
+                                                     alt="Default profile picture"
+                                                     class="rounded-circle me-3" 
+                                                     style="width: 50px; height: 50px; object-fit: cover;">
+                                            {% endif %}
+                                            <div>
+                                                <a href="{% url 'public_profile' followed_user.username %}" class="text-decoration-none">
+                                                    <h6 class="mb-0">{{ followed_user.get_full_name|default:followed_user.username }}</h6>
+                                                </a>
+                                                <small class="text-muted">@{{ followed_user.username }}</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                {% empty %}
+                                    <div class="col-12">
+                                        <p class="text-muted text-center mb-0">You're not following anyone yet.</p>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        <div class="tab-pane fade" id="followers" role="tabpanel">
+                            <div class="row">
+                                {% for follower in follower_users %}
+                                    <div class="col-md-6 col-lg-4 mb-3">
+                                        <div class="user-card d-flex align-items-center p-3 border rounded">
+                                            {% if follower.profile_picture %}
+                                                <img src="{{ follower.profile_picture.url }}" 
+                                                     alt="{{ follower.username }}'s profile picture"
+                                                     class="rounded-circle me-3" 
+                                                     style="width: 50px; height: 50px; object-fit: cover;">
+                                            {% else %}
+                                                <img src="{% static 'core/img/default_profile.png' %}" 
+                                                     alt="Default profile picture"
+                                                     class="rounded-circle me-3" 
+                                                     style="width: 50px; height: 50px; object-fit: cover;">
+                                            {% endif %}
+                                            <div>
+                                                <a href="{% url 'public_profile' follower.username %}" class="text-decoration-none">
+                                                    <h6 class="mb-0">{{ follower.get_full_name|default:follower.username }}</h6>
+                                                </a>
+                                                <small class="text-muted">@{{ follower.username }}</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                {% empty %}
+                                    <div class="col-12">
+                                        <p class="text-muted text-center mb-0">No followers yet.</p>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Your Posts Section -->
+    <div id="your-posts" class="card mb-4">
+        <div class="card-header">
+            <h3 class="mb-0">Your Posts</h3>
+        </div>
+        <div class="card-body">
+            {% if user_posts %}
+                <div class="row">
+                    {% for post in user_posts %}
+                        <div class="col-md-6 mb-3">
+                            {% include 'core/partials/post_card.html' with post=post user_votes=user_votes %}
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p class="text-muted">You haven't created any posts yet.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Your Reactions Section -->
+    <div id="your-reactions" class="card mb-4">
+        <div class="card-header">
+            <h3 class="mb-0">Your Reactions</h3>
+        </div>
+        <div class="card-body">
+            {% if voted_posts %}
+                <div class="row">
+                    {% for post in voted_posts %}
+                        <div class="col-md-6 mb-3">
+                            {% include 'core/partials/post_card.html' with post=post user_votes=user_votes %}
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p class="text-muted">You haven't reacted to any posts yet.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Your Interactions Section -->
+    <div id="your-interactions" class="card mb-4">
+        <div class="card-header">
+            <h3 class="mb-0">Your Interactions</h3>
+        </div>
+        <div class="card-body">
+            {% if commented_posts %}
+                <div class="row">
+                    {% for post in commented_posts %}
+                        <div class="col-md-6 mb-3">
+                            {% include 'core/partials/post_card.html' with post=post user_votes=user_votes %}
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p class="text-muted">You haven't commented on any posts yet.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Posts You're Following Section -->
+    <div id="your-following" class="card mb-4">
+        <div class="card-header">
+            <h3 class="mb-0">Posts You're Following</h3>
+        </div>
+        <div class="card-body">
+            {% if followed_posts %}
+                <div class="row">
+                    {% for post in followed_posts %}
+                        <div class="col-md-6 mb-3">
+                            {% include 'core/partials/post_card.html' with post=post user_votes=user_votes %}
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p class="text-muted">You're not following any posts yet.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Delete Account Modal -->
+<div class="modal fade" id="deleteAccountModal" tabindex="-1" aria-labelledby="deleteAccountModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteAccountModalLabel">Delete Account</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p class="text-danger">Warning: This action cannot be undone!</p>
+                <p>Are you sure you want to delete your account? This will:</p>
+                <ul>
+                    <li>Permanently delete your profile</li>
+                    <li>Convert your posts to anonymous posts</li>
+                    <li>Remove all your personal information</li>
+                </ul>
+                <form method="POST" action="{% url 'delete_account' %}" id="deleteAccountForm">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="confirmPassword" class="form-label">Enter your password to confirm:</label>
+                        <input type="password" class="form-control" id="confirmPassword" name="password" required>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger" id="deleteAccountBtn">Delete Account</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Smooth scroll for anchor links
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener('click', function (e) {
+            e.preventDefault();
+            const target = document.querySelector(this.getAttribute('href'));
+            if (target) {
+                target.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'start'
+                });
+            }
+        });
+    });
+
+    // Add delete account button handling
+    document.getElementById('deleteAccountBtn').addEventListener('click', function() {
+        if (confirm('Are you absolutely sure you want to delete your account? This cannot be undone.')) {
+            document.getElementById('deleteAccountForm').submit();
+        }
+    });
+</script>
+{% endblock %}
+

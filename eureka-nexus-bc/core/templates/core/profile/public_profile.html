@@ -1,0 +1,116 @@
+{% extends 'core/base.html' %}
+{% load custom_filters %}
+
+{% block content %}
+{% csrf_token %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body text-center">
+                    {% if profile_user.profile.avatar %}
+                        <img src="{{ profile_user.profile.avatar.url }}" 
+                             class="rounded-circle mb-3" 
+                             alt="{{ profile_user.username }}"
+                             style="width: 150px; height: 150px; object-fit: cover;">
+                    {% endif %}
+                    <h3>{{ profile_user.username }}</h3>
+                    {% if profile_user.profile.bio %}
+                        <p class="text-muted">{{ profile_user.profile.bio }}</p>
+                    {% endif %}
+                    <p class="text-muted">Member since: {{ profile_user.date_joined|date:"F Y" }}</p>
+                    {% if not is_own_profile and user.is_authenticated %}
+                        <button id="followButton" 
+                                class="btn {% if is_following %}btn-secondary{% else %}btn-primary{% endif %}"
+                                data-username="{{ profile_user.username }}"
+                                onclick="toggleFollow(this)">
+                            {% if is_following %}Unfollow{% else %}Follow{% endif %}
+                        </button>
+                    {% endif %}
+                    <div class="profile-stats">
+                        <span>Followers: {{ followers_count }}</span>
+                        <span>Following: {{ following_count }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-8">
+            <ul class="nav nav-tabs mb-4" id="profileTabs" role="tablist">
+                <li class="nav-item">
+                    <a class="nav-link active" id="posts-tab" data-bs-toggle="tab" href="#posts" role="tab">Posts</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" id="comments-tab" data-bs-toggle="tab" href="#comments" role="tab">Comments</a>
+                </li>
+            </ul>
+            
+            <div class="tab-content" id="profileTabsContent">
+                <div class="tab-pane fade show active" id="posts" role="tabpanel">
+                    {% for post in posts %}
+                        {% include 'core/partials/post_card.html' with post=post %}
+                    {% empty %}
+                        <p class="text-muted">No posts yet.</p>
+                    {% endfor %}
+                </div>
+                
+                <div class="tab-pane fade" id="comments" role="tabpanel">
+                    {% for comment in comments %}
+                        <div class="card mb-3">
+                            <div class="card-body">
+                                <p class="card-text">{{ comment.content }}</p>
+                                <small class="text-muted">
+                                    On post: <a href="{% url 'post_detail' comment.post.id %}">{{ comment.post.title }}</a>
+                                    - {{ comment.created_at|timesince }} ago
+                                </small>
+                            </div>
+                        </div>
+                    {% empty %}
+                        <p class="text-muted">No comments yet.</p>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function toggleFollow(button) {
+    const username = button.dataset.username;
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+    fetch(`/toggle-follow/${username}/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': csrfToken,
+            'Content-Type': 'application/json',
+        },
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            button.textContent = data.is_following ? 'Unfollow' : 'Follow';
+            button.classList.toggle('btn-primary');
+            button.classList.toggle('btn-secondary');
+            // Update follower count without page reload
+            const statsDiv = document.querySelector('.profile-stats');
+            if (statsDiv) {
+                const followerSpan = statsDiv.querySelector('span:first-child');
+                if (followerSpan) {
+                    const currentCount = parseInt(followerSpan.textContent.split(': ')[1]);
+                    followerSpan.textContent = `Followers: ${data.is_following ? currentCount + 1 : currentCount - 1}`;
+                }
+            }
+        } else {
+            alert(data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred while processing your request.');
+    });
+}
+</script>
+{% endblock %} 

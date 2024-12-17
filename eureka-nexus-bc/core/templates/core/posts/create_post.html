@@ -1,0 +1,603 @@
+{% extends 'core/base.html' %}
+{% load static %}
+{% load custom_filters %}
+
+{% block title %}Create Post{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Create New Post</h2>
+    
+    <form method="post" enctype="multipart/form-data" id="postForm">
+        {% csrf_token %}
+        
+        <!-- Required Fields -->
+        <div class="required-fields mb-4">
+            <h4>Required Information</h4>
+            <div class="form-group mb-3">
+                <label for="{{ form.title.id_for_label }}">Title*</label>
+                {{ form.title }}
+            </div>
+            
+            <div class="form-group mb-3">
+                <label for="{{ form.description.id_for_label }}">Description*</label>
+                {{ form.description }}
+            </div>
+            
+            <div class="form-group mb-3">
+                <label for="{{ form.image.id_for_label }}">Main Image*</label>
+                {{ form.image }}
+            </div>
+            
+            <div class="additional-multimedia mb-4">
+                <h4>Additional Multimedia</h4>
+                <div class="multimedia-upload-container">
+                    <div class="multimedia-preview" id="multimediaPreview"></div>
+                    <div class="upload-controls">
+                        <input type="file" 
+                               class="form-control" 
+                               id="multimediaFiles" 
+                               name="multimedia_files" 
+                               multiple
+                               accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.txt">
+                    </div>
+                </div>
+            </div>
+            
+            <div class="form-check mb-3">
+                <input type="checkbox" class="form-check-input" id="anonymousPost" name="anonymous">
+                <label class="form-check-label" for="anonymousPost">Post Anonymously</label>
+            </div>
+        </div>
+
+        <!-- Optional Attributes -->
+        <div class="optional-attributes mb-4">
+            <h4>Optional Attributes</h4>
+            <div class="mb-3">
+                <select class="form-select" id="attributeSelector">
+                    <option value="">Select an attribute to add...</option>
+                    <option value="size">Size</option>
+                    <option value="colour">Colour</option>
+                    <option value="shape">Shape</option>
+                    <option value="weight">Weight</option>
+                    <option value="texture">Texture</option>
+                    <option value="origin">Origin</option>
+                    <option value="value">Value</option>
+                    <option value="condition">Condition</option>
+                    <option value="smell">Smell</option>
+                    <option value="taste">Taste</option>
+                    <option value="origin_of_acquisition">Origin of Acquisition</option>
+                    <option value="pattern">Pattern</option>
+                    <option value="functionality">Functionality</option>
+                    <option value="material">Material</option>
+                    <option value="image_description">Image Description</option>
+                    <option value="icon_description">Icon Description</option>
+                    <option value="markings">Markings</option>
+                    <option value="print_description">Print Description</option>
+                    <option value="brand">Brand</option>
+                    <option value="time_period">Time Period</option>
+                    <option value="object_domain">Object Domain</option>
+                    <option value="hardness">Hardness</option>
+                    <option value="elasticity">Elasticity</option>
+                    <option value="transparency">Transparency</option>
+                    <option value="location">Location</option>
+                </select>
+                                        </div>
+            
+            <div id="selectedAttributes" class="mb-3">
+                <!-- Dynamic attributes will be added here -->
+            </div>
+        </div>
+
+        <!-- Wikidata Tags -->
+        <div class="wikidata-tags mb-4">
+            <h4>Semantic Tags</h4>
+            <div class="mb-3">                
+                <div class="wikidata-search position-relative">
+                    <input type="text" class="form-control" id="wikidataSearch" 
+                           placeholder="Search Wikidata..." autocomplete="off">
+                    <div class="wikidata-results position-absolute w-100 bg-white border rounded shadow-sm" 
+                         style="display: none; z-index: 1000; max-height: 300px; overflow-y: auto;">
+                    </div>
+                </div>
+            </div>
+            
+            <div id="selectedTags" class="mb-3">
+                <!-- Selected tags will be displayed here -->
+            </div>
+            
+            <div id="tagFormset" style="display: none;">
+                <!-- Hidden formset fields will be dynamically added here -->
+            </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary">Create Post</button>
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .attribute-container {
+        border: 1px solid #ddd;
+        padding: 15px;
+        margin-bottom: 10px;
+        border-radius: 5px;
+        position: relative;
+    }
+    
+    .remove-attribute {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+    }
+    
+    .wikidata-results {
+        position: absolute;
+        background: white;
+        border: 1px solid #ddd;
+        max-height: 200px;
+        overflow-y: auto;
+        width: 100%;
+        z-index: 1000;
+        display: none;
+    }
+    
+    .wikidata-result-item {
+        padding: 5px 10px;
+        cursor: pointer;
+    }
+    
+    .wikidata-result-item:hover {
+        background-color: #f5f5f5;
+    }
+    
+    .wikidata-result {
+        padding: 8px 12px;
+        cursor: pointer;
+        border-bottom: 1px solid #eee;
+    }
+    
+    .wikidata-result:hover {
+        background-color: #f8f9fa;
+    }
+    
+    .wikidata-result .title {
+        font-weight: 500;
+    }
+    
+    .wikidata-result .description {
+        font-size: 0.875rem;
+        color: #6c757d;
+    }
+    
+    .selected-tag {
+        display: inline-flex;
+        align-items: center;
+        background-color: #e9ecef;
+        border-radius: 4px;
+        padding: 4px 8px;
+        margin: 0 4px 4px 0;
+    }
+    
+    .selected-tag .remove-tag {
+        margin-left: 8px;
+        cursor: pointer;
+        color: #dc3545;
+        border: none;
+        background: none;
+        padding: 0 4px;
+    }
+
+    .multimedia-preview {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+        gap: 1rem;
+        margin-bottom: 1rem;
+    }
+
+    .multimedia-item {
+        position: relative;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        padding: 0.5rem;
+    }
+
+    .multimedia-item img {
+        width: 100%;
+        height: auto;
+        object-fit: cover;
+    }
+
+    .multimedia-item .remove-btn {
+        position: absolute;
+        top: 5px;
+        right: 5px;
+        background: rgba(255, 0, 0, 0.7);
+        color: white;
+        border: none;
+        border-radius: 50%;
+        width: 24px;
+        height: 24px;
+        cursor: pointer;
+    }
+
+    .multimedia-type-icon {
+        font-size: 2rem;
+        text-align: center;
+        color: #6c757d;
+    }
+    
+    .location-results {
+        position: absolute;
+        background: white;
+        border: 1px solid #ddd;
+        max-height: 200px;
+        overflow-y: auto;
+        width: 100%;
+        z-index: 1000;
+        display: none;
+    }
+    
+    .location-result-item {
+        padding: 8px 12px;
+        cursor: pointer;
+        border-bottom: 1px solid #eee;
+    }
+    
+    .location-result-item:hover {
+        background-color: #f8f9fa;
+    }
+    
+    .location-result-item .title {
+        font-weight: 500;
+    }
+    
+    .location-result-item .description {
+        font-size: 0.875rem;
+        color: #6c757d;
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+{{ block.super }}
+<script type="text/javascript">
+const attributeConfig = {
+    size: {
+        label: 'Size',
+        type: 'complex',
+        exactnessChoices: [
+            ['approximate', 'Approximate'],
+            ['exact', 'Exact']
+        ],
+        units: [
+            ['mm', 'Millimeter'],
+            ['cm', 'Centimeter'],
+            ['m', 'Meter'],
+            ['km', 'Kilometer'],
+            ['in', 'Inch'],
+            ['ft', 'Foot'],
+            ['yd', 'Yard'],
+            ['mi', 'Mile']
+        ],
+        dimensions: ['width', 'height', 'depth'],
+        maxLength: 100
+    },
+    colour: {
+        label: 'Colour',
+        choices: {{ colour_choices|safe }},
+        customField: true,
+        maxLength: 50
+    },
+    shape: {
+        label: 'Shape',
+        choices: {{ shape_choices|safe }},
+        customField: true,
+        maxLength: 300
+    },
+    weight: {
+        label: 'Weight',
+        type: 'complex',
+        exactnessChoices: [
+            ['approximate', 'Approximate'],
+            ['exact', 'Exact']
+        ],
+        approximateChoices: [
+            ['lightweight', 'Lightweight'],
+            ['medium', 'Medium Weight'],
+            ['heavy', 'Heavy'],
+            ['other', 'Other']
+        ],
+        units: [
+            ['mg', 'Milligram'],
+            ['g', 'Gram'],
+            ['kg', 'Kilogram'],
+            ['t', 'Ton'],
+            ['oz', 'Ounce'],
+            ['lb', 'Pound'],
+            ['st', 'Stone']
+        ],
+        customField: true,
+        maxLength: 100
+    },
+    texture: {
+        label: 'Texture',
+        choices: [
+            ['smooth', 'Smooth'],
+            ['rough', 'Rough'],
+            ['grainy', 'Grainy'],
+            ['polished', 'Polished'],
+            ['matte', 'Matte'],
+            ['other', 'Other']
+        ],
+        customField: true,
+        maxLength: 300
+    },
+    origin: {
+        label: 'Origin',
+        maxLength: 300
+    },
+    value: {
+        label: 'Value',
+        maxLength: 50
+    },
+    condition: {
+        label: 'Condition',
+        choices: {{ condition_choices|safe }},
+        customField: true,
+        maxLength: 100
+    },
+    smell: {
+        label: 'Smell',
+        choices: [
+            ['odorless', 'Odorless'],
+            ['chemical', 'Chemical'],
+            ['earthy', 'Earthy'],
+            ['metallic', 'Metallic'],
+            ['fragrant', 'Fragrant'],
+            ['other', 'Other']
+        ],
+        customField: true,
+        maxLength: 300
+    },
+    taste: {
+        label: 'Taste',
+        choices: [
+            ['sweet', 'Sweet'],
+            ['salty', 'Salty'],
+            ['metallic', 'Metallic'],
+            ['bitter', 'Bitter'],
+            ['sour', 'Sour'],
+            ['other', 'Other']
+        ],
+        customField: true,
+        maxLength: 300
+    },
+    origin_of_acquisition: {
+        label: 'Origin of Acquisition',
+        maxLength: 300
+    },
+    pattern: {
+        label: 'Pattern',
+        choices: [
+            ['plain', 'Plain'],
+            ['patterned', 'Patterned'],
+            ['striped', 'Striped'],
+            ['checkered', 'Checkered'],
+            ['marbled', 'Marbled'],
+            ['other', 'Other']
+        ],
+        customField: true,
+        maxLength: 300
+    },
+    functionality: {
+        label: 'Functionality',
+        choices: [
+            ['rigid', 'Rigid'],
+            ['moving', 'Moving'],
+            ['adhesive', 'Adhesive'],
+            ['other', 'Other']
+        ],
+        customField: true,
+        maxLength: 300
+    },
+    material: {
+        label: 'Material',
+        choices: [
+            ['metal', 'Metal'],
+            ['wood', 'Wood'],
+            ['plastic', 'Plastic'],
+            ['glass', 'Glass'],
+            ['fabric', 'Fabric'],
+            ['ceramic', 'Ceramic'],
+            ['other', 'Other']
+        ],
+        customField: true,
+        maxLength: 100
+    },
+    image_description: {
+        label: 'Image Description',
+        maxLength: 500
+    },
+    icon_description: {
+        label: 'Icon Description',
+        maxLength: 500
+    },
+    markings: {
+        label: 'Markings',
+        maxLength: 500
+    },
+    print_description: {
+        label: 'Print Description',
+        maxLength: 500
+    },
+    brand: {
+        label: 'Brand',
+        maxLength: 200
+    },
+    time_period: {
+        label: 'Time Period',
+        choices: [
+            ['ancient', 'Ancient'],
+            ['medieval', 'Medieval'],
+            ['modern', 'Modern'],
+            ['contemporary', 'Contemporary'],
+            ['other', 'Other']
+        ],
+        customField: true,
+        maxLength: 100
+    },
+    object_domain: {
+        label: 'Object Domain',
+        choices: [
+            ['art_design', 'Art and Design'],
+            ['technology', 'Technology'],
+            ['household', 'Household'],
+            ['fashion_accessories', 'Fashion and Accessories'],
+            ['tools_equipment', 'Tools and Equipment'],
+            ['toys_games', 'Toys and Games'],
+            ['historical_cultural', 'Historical and Cultural'],
+            ['other', 'Other']
+        ],
+        customField: true,
+        maxLength: 100
+    },
+    hardness: {
+        label: 'Hardness',
+        choices: [
+            ['soft', 'Soft'],
+            ['medium', 'Medium'],
+            ['hard', 'Hard'],
+            ['other', 'Other']
+        ],
+        customField: true,
+        maxLength: 100
+    },
+    elasticity: {
+        label: 'Elasticity',
+        choices: [
+            ['elastic', 'Elastic'],
+            ['non_elastic', 'Non-elastic'],
+            ['semi_elastic', 'Semi-elastic'],
+            ['other', 'Other']
+        ],
+        customField: true,
+        maxLength: 100
+    },
+    transparency: {
+        label: 'Transparency',
+        choices: [
+            ['transparent', 'Transparent'],
+            ['translucent', 'Translucent'],
+            ['opaque', 'Opaque'],
+            ['other', 'Other']
+        ],
+        customField: true,
+        maxLength: 100
+    },
+    location: {
+        label: 'Location',
+        type: 'location',
+        maxLength: 300
+    }
+};
+</script>
+<script src="{% static 'core/js/create_post.js' %}"></script>
+<script src="{% static 'core/js/semantic_tags.js' %}"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const multimediaInput = document.getElementById('multimediaFiles');
+    const previewContainer = document.getElementById('multimediaPreview');
+    const uploadedFiles = new Set();
+    let selectedFiles = []; // Array to keep track of selected files
+    
+    multimediaInput.addEventListener('change', function(e) {
+        const files = Array.from(e.target.files);
+        console.log('Files selected:', files.map(f => f.name));
+        
+        // Add new files to our selectedFiles array
+        selectedFiles = selectedFiles.concat(files);
+        
+        files.forEach(file => {
+            if (uploadedFiles.has(file.name)) {
+                return;
+            }
+            
+            uploadedFiles.add(file.name);
+            const reader = new FileReader();
+            const itemDiv = document.createElement('div');
+            itemDiv.className = 'multimedia-item';
+            
+            const removeBtn = document.createElement('button');
+            removeBtn.className = 'remove-btn';
+            removeBtn.innerHTML = '×';
+            removeBtn.onclick = function() {
+                itemDiv.remove();
+                uploadedFiles.delete(file.name);
+                // Remove file from selectedFiles array
+                selectedFiles = selectedFiles.filter(f => f.name !== file.name);
+            };
+            
+            if (file.type.startsWith('image/')) {
+                reader.onload = function(e) {
+                    itemDiv.innerHTML = `
+                        <img src="${e.target.result}" alt="${file.name}">
+                        <div class="mt-2 small">${file.name}</div>
+                    `;
+                    itemDiv.appendChild(removeBtn);
+                };
+                reader.readAsDataURL(file);
+            } else {
+                let icon = 'file';
+                if (file.type.startsWith('video/')) icon = 'film';
+                else if (file.type.startsWith('audio/')) icon = 'music';
+                else if (file.type.includes('pdf')) icon = 'file-pdf';
+                
+                itemDiv.innerHTML = `
+                    <div class="multimedia-type-icon">
+                        <i class="fas fa-${icon}"></i>
+                    </div>
+                    <div class="mt-2 small">${file.name}</div>
+                `;
+                itemDiv.appendChild(removeBtn);
+            }
+            
+            previewContainer.appendChild(itemDiv);
+        });
+    });
+
+    // Handle form submission
+    document.getElementById('postForm').addEventListener('submit', function(e) {
+        e.preventDefault(); // Prevent default form submission
+        
+        // Create FormData from the form
+        const formData = new FormData(this);
+        
+        // Remove existing multimedia_files entries
+        formData.delete('multimedia_files');
+        
+        // Add each selected file individually
+        selectedFiles.forEach((file, index) => {
+            formData.append('multimedia_files', file);
+        });
+        
+        // Submit the form using fetch
+        fetch(this.action, {
+            method: 'POST',
+            body: formData,
+            credentials: 'same-origin'
+        })
+        .then(response => {
+            if (response.redirected) {
+                window.location.href = response.url;
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+        });
+    });
+});
+</script>
+{% endblock %}
+
