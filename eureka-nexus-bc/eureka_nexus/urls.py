@@ -25,6 +25,14 @@ urlpatterns = [
     path('', include('core.urls')),
 ]
 
+from django.views.static import serve
+from django.urls import re_path
+
+urlpatterns += [
+    re_path(r'^media/(?P<path>.*)$', serve, {
+        'document_root': settings.MEDIA_ROOT,
+    }),
+]
 
 # these are for the media and static files when in debug mode and for local development
 # change the settings in settings.py to use the correct paths for production
