@@ -28,7 +28,7 @@ SECRET_KEY = config('SECRET_KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = config('DEBUG', default=False, cast=bool)
 
-ALLOWED_HOSTS = ["swe573-software-development-practice-yd95.onrender.com", "127.0.0.1", "localhost", "127.0.0.1:8000"]
+ALLOWED_HOSTS = ["swe573-software-development-practice-yd95.onrender.com", "eurekanexus.onrender.com","127.0.0.1", "localhost", "127.0.0.1:8000"]
 
 
 # Application definition
