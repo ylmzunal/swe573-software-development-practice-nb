@@ -1,8 +1,0 @@
-{% load custom_filters %}
-{% with data=attribute.value|parse_json %}
-    {% if data.type == 'approximate' %}
-        {{ data.approximate_size }}
-    {% else %}
-        {{ data.width }}x{{ data.height }}x{{ data.depth }} {{ data.size_unit }}
-    {% endif %}
-{% endwith %} 
