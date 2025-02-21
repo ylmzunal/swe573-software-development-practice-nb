@@ -1,3 +1,34 @@
 /eureka-nexus-m/
 /btk_djangoCourse/
 /eureka-nexus/
+
+# Virtual Environment
+.env
+.venv
+.env.db
+env.yaml
+.yaml
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+venv/
+eureka_nexus_bc/venv/
+
+# Ignore sensitive files
+*.env
+local_settings.py
+
+# Python Bytecode and Caches
+*.pyc
+*.pyo
+*.pyd
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Logs
+*.log
+pip-log.txt
+pip-delete-this-directory.txt
